@@ -114,4 +114,22 @@ export const STRINGS = {
   modoEnsaioBloqueado: 'Disponível apenas na tela inicial.',
   modoEnsaioFaixa: 'MODO DE ENSAIO — os dados não entram na coleta',
   diagnosticoMenuTitulo: 'Diagnóstico',
+
+  volumeTitulo: 'Volume das faixas',
+  volumeApoio1: 'Só é possível abaixar. Para aumentar, use o volume do tablet.',
+  volumeApoio2: 'Mantenha os mesmos valores durante toda a coleta.',
+  volumeEditadas: 'Editadas',
+  volumeOriginais: 'Originais',
+  volumeTocarExemplo: 'Tocar exemplo',
+  volumeParar: 'Parar',
+  volumeRestaurar: 'Restaurar padrão (100%)',
+  volumeIndisponivel: 'Disponível apenas na tela inicial.',
+  volumeErroExemplo:
+    'Não foi possível tocar o exemplo. Verifique o áudio do aparelho.',
+  volumeAriaDiminuirEditadas: 'Diminuir volume das editadas',
+  volumeAriaAumentarEditadas: 'Aumentar volume das editadas',
+  volumeAriaRangeEditadas: 'Volume das editadas',
+  volumeAriaDiminuirOriginais: 'Diminuir volume das originais',
+  volumeAriaAumentarOriginais: 'Aumentar volume das originais',
+  volumeAriaRangeOriginais: 'Volume das originais',
 } as const;

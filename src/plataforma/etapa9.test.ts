@@ -443,16 +443,16 @@ describe('Etapa 9 — Wake Lock, VisualOrganico v2, Efeitos Sonoros de UI e Pref
     const s1 = criarSessaoValida(1);
     await repo.salvarSessao(s1);
 
-    // Sem registro prévio -> padrão { efeitosUi: true }
-    expect(await repo.obterPreferencias()).toEqual({ efeitosUi: true });
+    // Sem registro prévio -> padrão { efeitosUi: true, volumeEditadasPct: 100, volumeOriginaisPct: 100 }
+    expect(await repo.obterPreferencias()).toMatchObject({ efeitosUi: true });
 
     // Salva efeitosUi = false e lê de volta
     await repo.salvarPreferencias({ efeitosUi: false });
-    expect(await repo.obterPreferencias()).toEqual({ efeitosUi: false });
+    expect(await repo.obterPreferencias()).toMatchObject({ efeitosUi: false });
 
     // Salva efeitosUi = true e lê de volta
     await repo.salvarPreferencias({ efeitosUi: true });
-    expect(await repo.obterPreferencias()).toEqual({ efeitosUi: true });
+    expect(await repo.obterPreferencias()).toMatchObject({ efeitosUi: true });
 
     // Garante que o store "sessoes" permaneceu intacto
     const sessoes = await repo.listarSessoes();

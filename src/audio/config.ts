@@ -50,3 +50,9 @@ export const SOM_LIBERADO: DescritorTomUi = {
   nivel: NIVEL_EFEITOS_UI,
 };
 
+// Limites e padrão do controle de volume separado das faixas (Editadas e Originais) em porcentagem
+export const PERCENTUAL_VOLUME_MIN = 10;
+export const PERCENTUAL_VOLUME_MAX = 100;
+export const PERCENTUAL_VOLUME_PADRAO = 100;
+
+

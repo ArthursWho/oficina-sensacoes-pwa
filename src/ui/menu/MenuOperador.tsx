@@ -1,10 +1,23 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { audioEngine } from '../../audio/AudioEngine';
+import {
+  PERCENTUAL_VOLUME_MAX,
+  PERCENTUAL_VOLUME_MIN,
+  PERCENTUAL_VOLUME_PADRAO,
+} from '../../audio/config';
 import {
   assinarPreferenciaEfeitosUi,
   definirPreferenciaEfeitosUi,
   obterPreferenciaEfeitosUi,
 } from '../../audio/efeitosUi';
-import { obterContagemPreloadAudio } from '../../audio/preparo';
+import {
+  garantirPreload,
+  obterContagemPreloadAudio,
+} from '../../audio/preparo';
+import {
+  nivelParaGanho,
+  normalizarPercentualVolume,
+} from '../../audio/volume';
 import { STRINGS } from '../../content/strings';
 import {
   baixarArquivo,
@@ -39,7 +52,10 @@ import {
   estadoArmazenamento,
   EstadoArmazenamentoDispositivo,
 } from '../../storage/persistente';
-import { repositorioAtivo } from '../../storage/repositorio';
+import {
+  repositorioAtivo,
+  repositorioPreferencias,
+} from '../../storage/repositorio';
 import { Button } from '../components/Button';
 import { IconeEngrenagem } from '../components/IconeEngrenagem';
 import { Modal } from '../components/Modal';
@@ -48,7 +64,16 @@ import {
   DiagnosticoVisual,
   obterDiagnosticoVisual,
 } from '../components/VisualOrganico';
-import { acoesMenu, aoTocarEngrenagem } from './logicaMenu';
+import { acoesMenu, aoTocarEngrenagem, podeAjustarVolume } from './logicaMenu';
+import {
+  aplicarPassoVolume,
+  criarControladorExemploVolume,
+  criarPersistenciaVolumeDebounced,
+  EstadoExemploVolume,
+  iniciarRepeticaoSegurar,
+  layoutLinhaVolumePorLargura,
+  podeRestaurarVolumePadrao,
+} from './logicaVolume';
 import {
   aplicarAtualizacaoPwa,
   assinarAtualizacaoPwa,
@@ -83,6 +108,34 @@ function obterDisplayModeAtual(): string {
     return 'standalone';
   }
   return 'browser';
+}
+
+function IconePlayExemplo() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <polygon points="6 3 20 12 6 21 6 3" />
+    </svg>
+  );
+}
+
+function IconePararExemplo() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <rect x="5" y="5" width="14" height="14" rx="2" />
+    </svg>
+  );
 }
 
 // Botão global de engrenagem + Painel sobreposto do Menu do Operador
@@ -126,6 +179,44 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     obterModoEnsaio()
   );
 
+  // Estado dos volumes separados das faixas (10% a 100%, padrão 100%)
+  const [volumeEditadasPct, setVolumeEditadasPct] = useState<number>(
+    PERCENTUAL_VOLUME_PADRAO
+  );
+  const [volumeOriginaisPct, setVolumeOriginaisPct] = useState<number>(
+    PERCENTUAL_VOLUME_PADRAO
+  );
+  const volumesRef = useRef({
+    editadasPct: PERCENTUAL_VOLUME_PADRAO,
+    originaisPct: PERCENTUAL_VOLUME_PADRAO,
+  });
+
+  // Controlador de persistência automática com debounce de 400 ms e flush no fechamento
+  const persistenciaVolumeRef = useRef(
+    criarPersistenciaVolumeDebounced(async (v) => {
+      await repositorioPreferencias.salvarPreferencias(v);
+    }, 400)
+  );
+
+  // Controlador de exemplo de áudio ("Tocar exemplo" / "Parar")
+  const ctrlExemploRef = useRef(
+    criarControladorExemploVolume({
+      engine: audioEngine,
+      garantirPreload: () => garantirPreload(),
+    })
+  );
+  const [estadoExemplo, setEstadoExemplo] = useState<EstadoExemploVolume>(() =>
+    ctrlExemploRef.current.obterEstado()
+  );
+
+  // Controle de repetição ao segurar botões [ − ] e [ + ]
+  const pararSegurarRef = useRef<(() => void) | null>(null);
+
+  // Largura observada para classe de layout em linha (>= 640 px) vs empilhado
+  const [larguraJanela, setLarguraJanela] = useState<number>(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  );
+
   // Seção recolhível de Diagnóstico
   const [diagAberto, setDiagAberto] = useState<boolean>(false);
   const [swAtivo, setSwAtivo] = useState<boolean>(false);
@@ -136,17 +227,27 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     obterDiagnosticoVisual()
   );
 
+  const limparSegurarBotao = () => {
+    if (pararSegurarRef.current) {
+      pararSegurarRef.current();
+      pararSegurarRef.current = null;
+    }
+  };
+
   useEffect(() => {
     const u1 = assinarAtualizacaoPwa(setAtualizacaoPendente);
     const u2 = assinarWakeLockGlobal(setWakeLockState);
     const u3 = assinarPreferenciaEfeitosUi(setSonsUiAtivos);
     const u4 = assinarModoEnsaio(setModoEnsaio);
     const u5 = assinarDiagnosticoVisual(setDiagVisual);
+    const u6 = ctrlExemploRef.current.assinar(setEstadoExemplo);
 
     const onOnline = () => setIsOnline(true);
     const onOffline = () => setIsOnline(false);
+    const onResize = () => setLarguraJanela(window.innerWidth);
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
+    window.addEventListener('resize', onResize);
 
     return () => {
       u1();
@@ -154,10 +255,23 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
       u3();
       u4();
       u5();
+      u6();
+      limparSegurarBotao();
+      ctrlExemploRef.current.pararSeTocando();
+      void persistenciaVolumeRef.current.flush();
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
+
+  // Para imediatamente qualquer exemplo se a fase sair de "tcle" ou o menu fechar
+  useEffect(() => {
+    if (!menuAberto || estado.fase !== 'tcle') {
+      limparSegurarBotao();
+      ctrlExemploRef.current.pararSeTocando();
+    }
+  }, [menuAberto, estado.fase]);
 
   const verificarSwAtivo = async () => {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
@@ -172,6 +286,31 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     }
   };
 
+  const aplicarVolumesSincronizados = (
+    editadas: number,
+    originais: number,
+    agendarPersistencia: boolean
+  ) => {
+    const edNorm = normalizarPercentualVolume(editadas);
+    const orNorm = normalizarPercentualVolume(originais);
+    volumesRef.current = { editadasPct: edNorm, originaisPct: orNorm };
+    setVolumeEditadasPct(edNorm);
+    setVolumeOriginaisPct(orNorm);
+
+    // Atualiza o AudioEngine em tempo real (com rampa de 30 ms se o exemplo estiver soando)
+    audioEngine.definirNiveisVersao({
+      editado: nivelParaGanho(edNorm),
+      original: nivelParaGanho(orNorm),
+    });
+
+    if (agendarPersistencia) {
+      persistenciaVolumeRef.current.agendar({
+        editadasPct: edNorm,
+        originaisPct: orNorm,
+      });
+    }
+  };
+
   const carregarDadosMenu = async () => {
     setWakeLockState(obterEstadoWakeLockGlobal());
     void verificarSwAtivo();
@@ -180,22 +319,36 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
         repositorioAtivo.contarSessoes(),
         repositorioAtivo.contarNaoExportadas(),
         estadoArmazenamento(),
-        repositorioAtivo.obterPreferencias(),
+        repositorioPreferencias.obterPreferencias(),
       ]);
       setTotalSessoes(total);
       setNaoExportadas(pendentes);
       setInfoStorage(st);
       definirPreferenciaEfeitosUi(prefs.efeitosUi);
+      aplicarVolumesSincronizados(
+        prefs.volumeEditadasPct,
+        prefs.volumeOriginaisPct,
+        false
+      );
     } catch {
       // Mantém valores atuais se falhar leitura
     }
+  };
+
+  const fecharPainelMenu = () => {
+    limparSegurarBotao();
+    ctrlExemploRef.current.pararSeTocando();
+    void persistenciaVolumeRef.current.flush();
+    setMenuAberto(false);
   };
 
   const handleAlternarSonsUi = async () => {
     const novoValor = !sonsUiAtivos;
     definirPreferenciaEfeitosUi(novoValor);
     try {
-      await repositorioAtivo.salvarPreferencias({ efeitosUi: novoValor });
+      await repositorioPreferencias.salvarPreferencias({
+        efeitosUi: novoValor,
+      });
     } catch {
       // Mantém preferência em memória mesmo se falhar gravação
     }
@@ -203,6 +356,8 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
 
   const handleAlternarModoEnsaio = async () => {
     if (!podeAlternarEnsaio(estado)) return;
+    ctrlExemploRef.current.pararSeTocando();
+    await persistenciaVolumeRef.current.flush();
     const novoValor = !modoEnsaio;
     definirModoEnsaio(novoValor, estado);
     setUltimoGerado(null);
@@ -238,6 +393,53 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
   };
 
   const acoes = acoesMenu(estado, { totalSessoes, naoExportadas });
+  const volumeEditavel = podeAjustarVolume(estado);
+
+  // Handlers de ajuste de volume (slider, botões - / + com repetição ao segurar, e restaurar padrão)
+  const alterarVolumeVersao = (
+    versao: 'editado' | 'original',
+    novoValorPct: number
+  ) => {
+    if (!volumeEditavel) return;
+    if (versao === 'editado') {
+      aplicarVolumesSincronizados(
+        novoValorPct,
+        volumesRef.current.originaisPct,
+        true
+      );
+    } else {
+      aplicarVolumesSincronizados(
+        volumesRef.current.editadasPct,
+        novoValorPct,
+        true
+      );
+    }
+  };
+
+  const iniciarSegurarPasso = (
+    versao: 'editado' | 'original',
+    delta: -1 | 1
+  ) => {
+    if (!volumeEditavel) return;
+    limparSegurarBotao();
+    pararSegurarRef.current = iniciarRepeticaoSegurar(() => {
+      const atual =
+        versao === 'editado'
+          ? volumesRef.current.editadasPct
+          : volumesRef.current.originaisPct;
+      const proximo = aplicarPassoVolume(atual, delta);
+      alterarVolumeVersao(versao, proximo);
+    }, 120);
+  };
+
+  const handleRestaurarVolumePadrao = () => {
+    if (!volumeEditavel) return;
+    aplicarVolumesSincronizados(
+      PERCENTUAL_VOLUME_PADRAO,
+      PERCENTUAL_VOLUME_PADRAO,
+      true
+    );
+  };
 
   // Ação: Iniciar novo participante
   const handleIniciarNovoParticipante = () => {
@@ -247,19 +449,19 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     }
 
     if (estado.fase === 'tcle') {
-      setMenuAberto(false);
+      fecharPainelMenu();
       onRemontarTcle();
       return;
     }
 
-    setMenuAberto(false);
+    fecharPainelMenu();
     sessionStore.dispatch({ tipo: 'REINICIAR' });
     onRemontarTcle();
   };
 
   const handleDescartarNaoSalvaEContinuar = () => {
     setModalNaoSalvaAberto(false);
-    setMenuAberto(false);
+    fecharPainelMenu();
     sessionStore.dispatch({ tipo: 'REINICIAR', forcar: true });
     onRemontarTcle();
   };
@@ -267,7 +469,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
   // Ação: Cancelar sessão atual
   const handleCancelarSessaoAtual = () => {
     if (!acoes.cancelarSessao.habilitado) return;
-    setMenuAberto(false);
+    fecharPainelMenu();
     sessionStore.dispatch({ tipo: 'CANCELAR' });
   };
 
@@ -422,6 +624,10 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
   const contagemAudio = obterContagemPreloadAudio();
   const modoBuildStr =
     obterModoBuildAtual() === 'producao' ? 'PRODUÇÃO' : 'DESENVOLVIMENTO';
+  const layoutVolume = layoutLinhaVolumePorLargura(larguraJanela);
+  const podeRestaurar =
+    volumeEditavel &&
+    podeRestaurarVolumePadrao(volumeEditadasPct, volumeOriginaisPct);
 
   return (
     <>
@@ -491,29 +697,29 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
           aria-labelledby="operator-menu-title"
         >
           <div class="ui-operator-panel">
-            {/* 1. Título e botão Fechar */}
-            <header class="ui-operator-header">
+            {/* 1. Título e botão Fechar (FIXO/STICKY no topo do painel enquanto o conteúdo rola) */}
+            <header class="ui-operator-header ui-operator-header--sticky">
               <h2 id="operator-menu-title" class="ui-operator-title">
                 {STRINGS.menuTitulo}
               </h2>
-              <Button variant="secondary" onClick={() => setMenuAberto(false)}>
+              <Button variant="secondary" onClick={fecharPainelMenu}>
                 {STRINGS.menuFechar}
               </Button>
             </header>
 
-            {/* 2. Contadores: Sessões concluídas e Ainda não exportadas */}
+            {/* 2. Contadores: rótulo pequeno + APENAS o número grande abaixo (sem texto repetido) */}
             <section class="ui-operator-section">
               <div class="ui-operator-counters">
                 <div class="lab-stat-card">
                   <span class="diag-detail">{STRINGS.contadorSessoes}</span>
-                  <strong class="lab-stat-val">
-                    {STRINGS.contadorSessoes}: {totalSessoes}
+                  <strong class="lab-stat-val ui-operator-counter-number">
+                    {totalSessoes}
                   </strong>
                 </div>
                 <div class="lab-stat-card">
                   <span class="diag-detail">{STRINGS.naoExportadas}</span>
-                  <strong class="lab-stat-val">
-                    {STRINGS.naoExportadas}: {naoExportadas}
+                  <strong class="lab-stat-val ui-operator-counter-number">
+                    {naoExportadas}
                   </strong>
                 </div>
               </div>
@@ -644,7 +850,283 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
               )}
             </section>
 
-            {/* 5. Seção Aplicativo */}
+            {/* 5. Cartão "Volume das faixas" (entre Exportar dados e Aplicativo) */}
+            <section
+              class={`ui-operator-section ui-volume-card ${
+                !volumeEditavel ? 'ui-volume-card--disabled' : ''
+              }`}
+            >
+              <div class="ui-volume-card__header">
+                <h3 class="demo-section__title">{STRINGS.volumeTitulo}</h3>
+                <p class="ui-volume-card__apoio">{STRINGS.volumeApoio1}</p>
+                <p class="ui-volume-card__apoio">{STRINGS.volumeApoio2}</p>
+                {!volumeEditavel && (
+                  <p class="ui-volume-card__indisponivel">
+                    {STRINGS.volumeIndisponivel}
+                  </p>
+                )}
+              </div>
+
+              <div class="ui-volume-boxes">
+                {/* Caixa 1: Editadas */}
+                <div class="ui-volume-box">
+                  <div class="ui-volume-box__top">
+                    <span class="ui-volume-box__label">
+                      {STRINGS.volumeEditadas}
+                    </span>
+                    <strong class="ui-volume-box__value">
+                      {volumeEditadasPct}%
+                    </strong>
+                  </div>
+
+                  <div
+                    class={`ui-volume-box__controls ui-volume-box__controls--${layoutVolume}`}
+                  >
+                    <div class="ui-volume-box__slider-group">
+                      <button
+                        type="button"
+                        class="ui-btn ui-btn--secondary ui-volume-step-btn"
+                        aria-label={STRINGS.volumeAriaDiminuirEditadas}
+                        disabled={
+                          !volumeEditavel ||
+                          volumeEditadasPct <= PERCENTUAL_VOLUME_MIN
+                        }
+                        onPointerDown={() =>
+                          iniciarSegurarPasso('editado', -1)
+                        }
+                        onPointerUp={limparSegurarBotao}
+                        onPointerLeave={limparSegurarBotao}
+                        onPointerCancel={limparSegurarBotao}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            alterarVolumeVersao(
+                              'editado',
+                              aplicarPassoVolume(volumeEditadasPct, -1)
+                            );
+                          }
+                        }}
+                      >
+                        −
+                      </button>
+
+                      <input
+                        type="range"
+                        class="ui-volume-range"
+                        min={PERCENTUAL_VOLUME_MIN}
+                        max={PERCENTUAL_VOLUME_MAX}
+                        step={1}
+                        value={volumeEditadasPct}
+                        disabled={!volumeEditavel}
+                        aria-label={STRINGS.volumeAriaRangeEditadas}
+                        aria-valuemin={PERCENTUAL_VOLUME_MIN}
+                        aria-valuemax={PERCENTUAL_VOLUME_MAX}
+                        aria-valuenow={volumeEditadasPct}
+                        onInput={(e) =>
+                          alterarVolumeVersao(
+                            'editado',
+                            Number(e.currentTarget.value)
+                          )
+                        }
+                      />
+
+                      <button
+                        type="button"
+                        class="ui-btn ui-btn--secondary ui-volume-step-btn"
+                        aria-label={STRINGS.volumeAriaAumentarEditadas}
+                        disabled={
+                          !volumeEditavel ||
+                          volumeEditadasPct >= PERCENTUAL_VOLUME_MAX
+                        }
+                        onPointerDown={() =>
+                          iniciarSegurarPasso('editado', 1)
+                        }
+                        onPointerUp={limparSegurarBotao}
+                        onPointerLeave={limparSegurarBotao}
+                        onPointerCancel={limparSegurarBotao}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            alterarVolumeVersao(
+                              'editado',
+                              aplicarPassoVolume(volumeEditadasPct, 1)
+                            );
+                          }
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <div class="ui-volume-box__example-wrap">
+                      <Button
+                        variant="secondary"
+                        fullWidth
+                        disabled={!volumeEditavel}
+                        icon={
+                          estadoExemplo.tocando === 'editado' ? (
+                            <IconePararExemplo />
+                          ) : (
+                            <IconePlayExemplo />
+                          )
+                        }
+                        onClick={() =>
+                          ctrlExemploRef.current.clicarExemplo(
+                            'editado',
+                            estado
+                          )
+                        }
+                      >
+                        {estadoExemplo.tocando === 'editado'
+                          ? STRINGS.volumeParar
+                          : STRINGS.volumeTocarExemplo}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {estadoExemplo.erroEditadas && (
+                    <p class="ui-volume-box__error" role="alert">
+                      {estadoExemplo.erroEditadas}
+                    </p>
+                  )}
+                </div>
+
+                {/* Caixa 2: Originais */}
+                <div class="ui-volume-box">
+                  <div class="ui-volume-box__top">
+                    <span class="ui-volume-box__label">
+                      {STRINGS.volumeOriginais}
+                    </span>
+                    <strong class="ui-volume-box__value">
+                      {volumeOriginaisPct}%
+                    </strong>
+                  </div>
+
+                  <div
+                    class={`ui-volume-box__controls ui-volume-box__controls--${layoutVolume}`}
+                  >
+                    <div class="ui-volume-box__slider-group">
+                      <button
+                        type="button"
+                        class="ui-btn ui-btn--secondary ui-volume-step-btn"
+                        aria-label={STRINGS.volumeAriaDiminuirOriginais}
+                        disabled={
+                          !volumeEditavel ||
+                          volumeOriginaisPct <= PERCENTUAL_VOLUME_MIN
+                        }
+                        onPointerDown={() =>
+                          iniciarSegurarPasso('original', -1)
+                        }
+                        onPointerUp={limparSegurarBotao}
+                        onPointerLeave={limparSegurarBotao}
+                        onPointerCancel={limparSegurarBotao}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            alterarVolumeVersao(
+                              'original',
+                              aplicarPassoVolume(volumeOriginaisPct, -1)
+                            );
+                          }
+                        }}
+                      >
+                        −
+                      </button>
+
+                      <input
+                        type="range"
+                        class="ui-volume-range"
+                        min={PERCENTUAL_VOLUME_MIN}
+                        max={PERCENTUAL_VOLUME_MAX}
+                        step={1}
+                        value={volumeOriginaisPct}
+                        disabled={!volumeEditavel}
+                        aria-label={STRINGS.volumeAriaRangeOriginais}
+                        aria-valuemin={PERCENTUAL_VOLUME_MIN}
+                        aria-valuemax={PERCENTUAL_VOLUME_MAX}
+                        aria-valuenow={volumeOriginaisPct}
+                        onInput={(e) =>
+                          alterarVolumeVersao(
+                            'original',
+                            Number(e.currentTarget.value)
+                          )
+                        }
+                      />
+
+                      <button
+                        type="button"
+                        class="ui-btn ui-btn--secondary ui-volume-step-btn"
+                        aria-label={STRINGS.volumeAriaAumentarOriginais}
+                        disabled={
+                          !volumeEditavel ||
+                          volumeOriginaisPct >= PERCENTUAL_VOLUME_MAX
+                        }
+                        onPointerDown={() =>
+                          iniciarSegurarPasso('original', 1)
+                        }
+                        onPointerUp={limparSegurarBotao}
+                        onPointerLeave={limparSegurarBotao}
+                        onPointerCancel={limparSegurarBotao}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            alterarVolumeVersao(
+                              'original',
+                              aplicarPassoVolume(volumeOriginaisPct, 1)
+                            );
+                          }
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <div class="ui-volume-box__example-wrap">
+                      <Button
+                        variant="secondary"
+                        fullWidth
+                        disabled={!volumeEditavel}
+                        icon={
+                          estadoExemplo.tocando === 'original' ? (
+                            <IconePararExemplo />
+                          ) : (
+                            <IconePlayExemplo />
+                          )
+                        }
+                        onClick={() =>
+                          ctrlExemploRef.current.clicarExemplo(
+                            'original',
+                            estado
+                          )
+                        }
+                      >
+                        {estadoExemplo.tocando === 'original'
+                          ? STRINGS.volumeParar
+                          : STRINGS.volumeTocarExemplo}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {estadoExemplo.erroOriginais && (
+                    <p class="ui-volume-box__error" role="alert">
+                      {estadoExemplo.erroOriginais}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div class="ui-volume-card__footer">
+                <Button
+                  variant="ghost"
+                  disabled={!podeRestaurar}
+                  onClick={handleRestaurarVolumePadrao}
+                >
+                  {STRINGS.volumeRestaurar}
+                </Button>
+              </div>
+            </section>
+
+            {/* 6. Seção Aplicativo */}
             <section class="ui-operator-section">
               <h3 class="demo-section__title">Aplicativo</h3>
               <div class="demo-stack">
@@ -717,7 +1199,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
               </div>
             </section>
 
-            {/* 6. Seção Diagnóstico (recolhível) */}
+            {/* 7. Seção Diagnóstico (recolhível) */}
             <section class="ui-operator-section">
               <div
                 class="demo-row"

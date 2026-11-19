@@ -1,6 +1,8 @@
-# O Mundo a Partir do Útero — PWA (v1.0.0)
+# O Mundo a Partir do Útero — PWA (v1.1.0)
 
 Aplicativo Web Progressivo (PWA) 100% offline construído para a atividade didática **"Oficina de Sensações — O mundo a partir do útero"** do 1º semestre do curso de Psicologia da **UNIVILLE** (Estatística, Embriologia e Genética, Processos Básicos em Psicologia I e Psicologia: História, Escolas e Profissão I).
+
+> **Nota da versão 1.1.0:** Adicionado o cartão **"Volume das faixas"** no Menu do Operador, permitindo calibrar separadamente o volume das faixas **Editadas** e **Originais** (de 10% a 100%, com botão *"Tocar exemplo"* ao lado de cada controle). **Importante:** Atualize o aplicativo no tablet pelo Menu do Operador (*Aplicativo → Atualizar aplicativo*) e calibre os volumes com os fones da tenda **ANTES** de iniciar a coleta com o primeiro participante real.
 
 O aplicativo executa em tela cheia no tablet Android (Chrome), em ambiente com pouca luz, conduzindo o participante pela leitura do TCLE, reprodução de 6 pares de faixas musicais (versão filtrada intrauterina e versão original) com batimentos cardíacos nos intervalos, armazenamento local anônimo em IndexedDB e exportação offline em CSV/XLSX.
 

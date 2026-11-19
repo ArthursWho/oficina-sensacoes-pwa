@@ -18,6 +18,12 @@ Guia rápido de operação do tablet Android na tenda da oficina.
   - **Áudios pré-carregados**: `13/13`
 - [ ] **Verificar atualização pendente**: Na seção **Aplicativo** do menu, se aparecer o botão **"Atualizar aplicativo"**, tocar nele e confirmar para carregar a versão mais recente antes de desligar o Wi-Fi.
 - [ ] **Decisão sobre "Sons da interface"**: Na seção **Aplicativo**, definir **"Sons da interface"** (`Ligado` ou `Desligado`) conforme combinado pelo grupo e **manter a mesma opção durante toda a coleta**.
+- [ ] **Calibrar o "Volume das editadas e das originais" (v1.1.0)**:
+  1. Plugar os fones de ouvido oficiais da tenda e fixar o volume físico do tablet em um nível confortável.
+  2. Com o app na **Tela 1 (TCLE)**, abrir o Menu do Operador e localizar o cartão **"Volume das faixas"** (entre *Exportar dados* e *Aplicativo*).
+  3. Tocar em **"Tocar exemplo"** na caixa **Editadas** e na caixa **Originais** para comparar a intensidade percebida nos fones.
+  4. **Regra do controle:** Os controles vão de `10%` a `100%` e **só abaixam** (`100%` é o nível original sem atenuação). Se as faixas originais soarem mais altas que as editadas, **abaixe o controle das Originais** (ex.: para `75%` ou `80%`); se faltar volume geral em ambas, aumente o volume físico do próprio tablet.
+  5. **Fechar os valores ANTES da primeira participante real**, anotá-los no caderno da equipe e **NÃO mudar durante toda a coleta**. Os percentuais ficam salvos automaticamente no aparelho (mesmo se o tablet for reiniciado ou se o Modo de ensaio for ligado/desligado).
 - [ ] **Fazer um ensaio completo usando o "Modo de ensaio"**:
   1. Na tela inicial (TCLE), abrir o Menu do Operador → seção **Aplicativo** → mudar **"Modo de ensaio"** para **`Ligado`**.
   2. Confirmar que a faixa vermelha fixa **"MODO DE ENSAIO — os dados não entram na coleta"** apareceu no topo da tela.

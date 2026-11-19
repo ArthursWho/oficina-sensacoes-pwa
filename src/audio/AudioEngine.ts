@@ -47,6 +47,17 @@ export interface EstadoDepuracaoAudio {
 
 export type AudioContextFactory = () => AudioContext;
 
+export type VersaoFaixaAudio = 'editado' | 'original';
+
+export interface OpcoesTocarFaixa {
+  versao?: VersaoFaixaAudio;
+}
+
+export interface NiveisVersaoFaixa {
+  editado: number;
+  original: number;
+}
+
 interface FaixaAtiva {
   src: string;
   geracao: number;
@@ -55,6 +66,14 @@ interface FaixaAtiva {
 }
 
 const FADE_ANTI_CLICK_S = 0.015; // 15 ms de micro-fade para evitar estalos (clicks)
+const RAMPA_NIVEL_VERSAO_S = 0.03; // 30 ms de rampa linear ao alterar nível de versão durante reprodução
+const GANHO_VERSAO_MIN = 0.01;
+const GANHO_VERSAO_MAX = 1.0;
+
+function limitarGanhoVersao(g: number): number {
+  if (!Number.isFinite(g)) return GANHO_VERSAO_MAX;
+  return Math.max(GANHO_VERSAO_MIN, Math.min(GANHO_VERSAO_MAX, g));
+}
 
 function agoraMs(): number {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -74,6 +93,11 @@ export class AudioEngine {
   private gainMestre: GainNode | null = null;
   private gainBatimentos: GainNode | null = null;
   private gainMusica: GainNode | null = null;
+  private gainVersaoEditado: GainNode | null = null;
+  private gainVersaoOriginal: GainNode | null = null;
+
+  private ganhoVersaoEditado = 1.0;
+  private ganhoVersaoOriginal = 1.0;
 
   private readonly buffers = new Map<string, AudioBuffer>();
   private readonly cacheInfo = new Map<string, InfoBuffer>();
@@ -497,11 +521,81 @@ export class AudioEngine {
     }
   }
 
+  private garantirGrafoVariantes(
+    ctx: AudioContext,
+    gainMusica: GainNode
+  ): { editado: GainNode; original: GainNode } {
+    if (!this.gainVersaoEditado || !this.gainVersaoOriginal) {
+      const gEditado = ctx.createGain();
+      const gOriginal = ctx.createGain();
+      gEditado.gain.setValueAtTime(this.ganhoVersaoEditado, ctx.currentTime);
+      gOriginal.gain.setValueAtTime(this.ganhoVersaoOriginal, ctx.currentTime);
+      gEditado.connect(gainMusica);
+      gOriginal.connect(gainMusica);
+      this.gainVersaoEditado = gEditado;
+      this.gainVersaoOriginal = gOriginal;
+    }
+    return {
+      editado: this.gainVersaoEditado,
+      original: this.gainVersaoOriginal,
+    };
+  }
+
+  /**
+   * Define os multiplicadores de ganho separados para as versões "editado" e "original"
+   * (já convertidos por `nivelParaGanho`, limitados a [0.01, 1.0]).
+   * Quando alterado durante a reprodução de uma faixa, aplica rampa linear de ~30 ms sem estalo.
+   */
+  definirNiveisVersao(niveis: NiveisVersaoFaixa): void {
+    this.ganhoVersaoEditado = limitarGanhoVersao(niveis.editado);
+    this.ganhoVersaoOriginal = limitarGanhoVersao(niveis.original);
+
+    if (!this.ctx || !this.gainMusica) {
+      return;
+    }
+
+    const { editado, original } = this.garantirGrafoVariantes(
+      this.ctx,
+      this.gainMusica
+    );
+    const agora = this.ctx.currentTime;
+
+    const aplicarNoGain = (node: GainNode, alvo: number) => {
+      const p = node.gain;
+      const atual = typeof p.value === 'number' ? p.value : alvo;
+      p.cancelScheduledValues(agora);
+      if (this.fontesMusicaAtivas > 0) {
+        p.setValueAtTime(atual, agora);
+        p.linearRampToValueAtTime(alvo, agora + RAMPA_NIVEL_VERSAO_S);
+      } else {
+        p.setValueAtTime(alvo, agora);
+      }
+    };
+
+    aplicarNoGain(editado, this.ganhoVersaoEditado);
+    aplicarNoGain(original, this.ganhoVersaoOriginal);
+  }
+
+  /**
+   * Retorna os multiplicadores de ganho atualmente configurados para cada versão.
+   */
+  obterNiveisVersao(): NiveisVersaoFaixa {
+    return {
+      editado: this.ganhoVersaoEditado,
+      original: this.ganhoVersaoOriginal,
+    };
+  }
+
   /**
    * Toca uma faixa musical do início ao fim com garantia estrita de fonte única.
+   * Sem `opcoes.versao`, conecta diretamente ao `gainMusica` (comportamento idêntico ao original).
+   * Com `opcoes.versao` ("editado" | "original"), passa pelo `GainNode` da respectiva versão antes do `gainMusica`.
    * Resolve com "fim", "cancelada" ou "interrompida".
    */
-  async tocarFaixa(src: string): Promise<ResultadoFaixa> {
+  async tocarFaixa(
+    src: string,
+    opcoes?: OpcoesTocarFaixa
+  ): Promise<ResultadoFaixa> {
     if (!this.ctx || this.ctx.state !== 'running') {
       throw new Error(
         `AudioContext não está em execução (estado atual: ${this.estadoContexto()}). Chame unlock() primeiro.`
@@ -525,7 +619,15 @@ export class AudioEngine {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = false;
-    source.connect(gainMusica);
+
+    if (opcoes?.versao === 'editado' || opcoes?.versao === 'original') {
+      const nosVersao = this.garantirGrafoVariantes(ctx, gainMusica);
+      const destinoVersao =
+        opcoes.versao === 'editado' ? nosVersao.editado : nosVersao.original;
+      source.connect(destinoVersao);
+    } else {
+      source.connect(gainMusica);
+    }
 
     // Micro-fade de 15 ms na entrada para evitar click
     const agora = ctx.currentTime;

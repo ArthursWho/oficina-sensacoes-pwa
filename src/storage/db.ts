@@ -46,6 +46,8 @@ export interface RegistroUltimaExportacao {
 export interface RegistroPreferenciasDb {
   chave: 'preferencias';
   efeitosUi: boolean;
+  volumeEditadasPct?: number;
+  volumeOriginaisPct?: number;
 }
 
 export type RegistroMetaDb = RegistroUltimaExportacao | RegistroPreferenciasDb;

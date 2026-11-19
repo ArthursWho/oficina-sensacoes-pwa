@@ -1,6 +1,7 @@
 import {
   audioEngine,
   EventoEstadoAudio,
+  OpcoesTocarFaixa,
   ResultadoFaixa,
 } from '../audio/AudioEngine';
 import { FADE_IN_INICIAL_MS } from '../audio/config';
@@ -15,7 +16,10 @@ export interface EngineControlador {
   pararTudo(): void;
   fadeOutBatimentos(ms?: number): Promise<void>;
   fadeInBatimentos(ms?: number): Promise<void>;
-  tocarFaixa?(src: string): Promise<ResultadoFaixa>;
+  tocarFaixa?(
+    src: string,
+    opcoes?: OpcoesTocarFaixa
+  ): Promise<ResultadoFaixa>;
   tentarRetomar?(): Promise<boolean>;
   aoMudarEstado?(cb: (evento: EventoEstadoAudio) => void): () => void;
 }
@@ -104,7 +108,7 @@ export function criarControlador(
     const src = versao === 'editado' ? track.srcEditado : track.srcOriginal;
 
     try {
-      const promessa = engine.tocarFaixa(src);
+      const promessa = engine.tocarFaixa(src, { versao });
       promessa.then(
         (resultado) => {
           if (resultado === 'fim') {

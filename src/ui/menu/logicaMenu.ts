@@ -32,6 +32,13 @@ export function aoTocarEngrenagem(estado: Estado): AcaoEngrenagem {
 }
 
 /**
+ * Função pura: o controle de volume das faixas só pode ser alterado na fase "tcle" (tela inicial).
+ */
+export function podeAjustarVolume(estado: Estado): boolean {
+  return estado.fase === 'tcle';
+}
+
+/**
  * Calcula o estado de habilitação e avisos das ações do Menu do Operador.
  */
 export function acoesMenu(

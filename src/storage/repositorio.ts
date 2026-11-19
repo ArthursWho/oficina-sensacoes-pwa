@@ -1,3 +1,5 @@
+import { PERCENTUAL_VOLUME_PADRAO } from '../audio/config';
+import { normalizarPercentualVolume } from '../audio/volume';
 import { LinhaSessao, SessaoConcluida } from '../session/tipos';
 import { validarSessao } from '../session/utilidades';
 import {
@@ -20,6 +22,14 @@ import {
 
 export interface PreferenciasOperador {
   efeitosUi: boolean;
+  volumeEditadasPct?: number;
+  volumeOriginaisPct?: number;
+}
+
+export interface PreferenciasOperadorCompletas {
+  efeitosUi: boolean;
+  volumeEditadasPct: number;
+  volumeOriginaisPct: number;
 }
 
 export interface RepositorioSessoes {
@@ -31,8 +41,8 @@ export interface RepositorioSessoes {
   registrarExportacao(ids: string[], agora: Date): Promise<void>;
   obterUltimaExportacao(): Promise<RegistroUltimaExportacao | null>;
   contarNaoExportadas(): Promise<number>;
-  obterPreferencias(): Promise<PreferenciasOperador>;
-  salvarPreferencias(p: PreferenciasOperador): Promise<void>;
+  obterPreferencias(): Promise<PreferenciasOperadorCompletas>;
+  salvarPreferencias(p: Partial<PreferenciasOperador>): Promise<void>;
 }
 
 // Extrai o sufixo numérico de "Participante_NN" (ex.: "Participante_10" -> 10)
@@ -292,25 +302,63 @@ export function criarRepositorio(
       }
     },
 
-    async obterPreferencias(): Promise<PreferenciasOperador> {
+    async obterPreferencias(): Promise<PreferenciasOperadorCompletas> {
       const db = await abrirBanco(nomeDb);
       try {
         const reg = await db.get(STORE_META, 'preferencias');
         if (!reg || reg.chave !== 'preferencias') {
-          return { efeitosUi: true };
+          return {
+            efeitosUi: true,
+            volumeEditadasPct: PERCENTUAL_VOLUME_PADRAO,
+            volumeOriginaisPct: PERCENTUAL_VOLUME_PADRAO,
+          };
         }
-        return { efeitosUi: Boolean(reg.efeitosUi) };
+        return {
+          efeitosUi: reg.efeitosUi !== undefined ? Boolean(reg.efeitosUi) : true,
+          volumeEditadasPct:
+            reg.volumeEditadasPct !== undefined
+              ? normalizarPercentualVolume(reg.volumeEditadasPct)
+              : PERCENTUAL_VOLUME_PADRAO,
+          volumeOriginaisPct:
+            reg.volumeOriginaisPct !== undefined
+              ? normalizarPercentualVolume(reg.volumeOriginaisPct)
+              : PERCENTUAL_VOLUME_PADRAO,
+        };
       } finally {
         db.close();
       }
     },
 
-    async salvarPreferencias(p: PreferenciasOperador): Promise<void> {
+    async salvarPreferencias(
+      p: Partial<PreferenciasOperador>
+    ): Promise<void> {
       const db = await abrirBanco(nomeDb);
       try {
+        // Lê o registro existente para preservar campos não passados (ex.: preservar efeitosUi ao salvar volumes ou vice-versa)
+        const existente = await db.get(STORE_META, 'preferencias');
+        const atual =
+          existente && existente.chave === 'preferencias' ? existente : null;
+
         const registro: RegistroPreferenciasDb = {
           chave: 'preferencias',
-          efeitosUi: Boolean(p.efeitosUi),
+          efeitosUi:
+            p.efeitosUi !== undefined
+              ? Boolean(p.efeitosUi)
+              : atual?.efeitosUi !== undefined
+              ? Boolean(atual.efeitosUi)
+              : true,
+          volumeEditadasPct:
+            p.volumeEditadasPct !== undefined
+              ? normalizarPercentualVolume(p.volumeEditadasPct)
+              : atual?.volumeEditadasPct !== undefined
+              ? normalizarPercentualVolume(atual.volumeEditadasPct)
+              : PERCENTUAL_VOLUME_PADRAO,
+          volumeOriginaisPct:
+            p.volumeOriginaisPct !== undefined
+              ? normalizarPercentualVolume(p.volumeOriginaisPct)
+              : atual?.volumeOriginaisPct !== undefined
+              ? normalizarPercentualVolume(atual.volumeOriginaisPct)
+              : PERCENTUAL_VOLUME_PADRAO,
         };
         const tx = db.transaction(STORE_META, 'readwrite');
         await Promise.all([tx.store.put(registro), tx.done]);
@@ -334,15 +382,26 @@ function obterRepositorioPorNome(nomeDb: string): RepositorioSessoes {
 }
 
 /**
- * Cria um proxy de repositório que delega todas as operações ao banco vigente
- * (`nomeBancoAtivo(obterModoBuild(), obterModoEnsaio())`).
+ * Cria um proxy de repositório que delega as operações de SESSÃO ao banco vigente
+ * (`nomeBancoAtivo(obterModoBuild(), obterModoEnsaio())`),
+ * mas mantém as PREFERÊNCIAS (`obterPreferencias` / `salvarPreferencias`) SEMPRE no banco fixo
+ * do modo de build (`nomeBancoAtivo(obterModoBuild(), false)`), independente do Modo de ensaio.
  */
 export function criarProxyRepositorioAtivo(
   obterModoBuild: () => ModoBuild = obterModoBuildAtual,
   obterEnsaio: () => boolean = obterModoEnsaio
-): RepositorioSessoes & { nomeBancoVigente(): string } {
-  const resolverAtual = (): RepositorioSessoes => {
+): RepositorioSessoes & {
+  nomeBancoVigente(): string;
+  nomeBancoPreferencias(): string;
+} {
+  const resolverSessoesAtual = (): RepositorioSessoes => {
     const nome = nomeBancoAtivo(obterModoBuild(), obterEnsaio());
+    return obterRepositorioPorNome(nome);
+  };
+
+  const resolverPreferenciasFixo = (): RepositorioSessoes => {
+    // Sempre false para modoEnsaio: preferências ficam no banco de produção (ou dev no modo dev)
+    const nome = nomeBancoAtivo(obterModoBuild(), false);
     return obterRepositorioPorNome(nome);
   };
 
@@ -350,40 +409,70 @@ export function criarProxyRepositorioAtivo(
     nomeBancoVigente(): string {
       return nomeBancoAtivo(obterModoBuild(), obterEnsaio());
     },
+    nomeBancoPreferencias(): string {
+      return nomeBancoAtivo(obterModoBuild(), false);
+    },
     salvarSessao(s) {
-      return resolverAtual().salvarSessao(s);
+      return resolverSessoesAtual().salvarSessao(s);
     },
     listarSessoes() {
-      return resolverAtual().listarSessoes();
+      return resolverSessoesAtual().listarSessoes();
     },
     contarSessoes() {
-      return resolverAtual().contarSessoes();
+      return resolverSessoesAtual().contarSessoes();
     },
     proximoNumeroParticipante() {
-      return resolverAtual().proximoNumeroParticipante();
+      return resolverSessoesAtual().proximoNumeroParticipante();
     },
     verificarSaude() {
-      return resolverAtual().verificarSaude();
+      return resolverSessoesAtual().verificarSaude();
     },
     registrarExportacao(ids, agora) {
-      return resolverAtual().registrarExportacao(ids, agora);
+      return resolverSessoesAtual().registrarExportacao(ids, agora);
     },
     obterUltimaExportacao() {
-      return resolverAtual().obterUltimaExportacao();
+      return resolverSessoesAtual().obterUltimaExportacao();
     },
     contarNaoExportadas() {
-      return resolverAtual().contarNaoExportadas();
+      return resolverSessoesAtual().contarNaoExportadas();
     },
     obterPreferencias() {
-      return resolverAtual().obterPreferencias();
+      return resolverPreferenciasFixo().obterPreferencias();
     },
     salvarPreferencias(p) {
-      return resolverAtual().salvarPreferencias(p);
+      return resolverPreferenciasFixo().salvarPreferencias(p);
     },
   };
 }
 
-// Proxy singleton do repositório ativo (alterna automaticamente entre produção/dev e ensaio)
+/**
+ * Acessor dedicado exclusivamente às preferências do operador, sempre ligado ao banco fixo
+ * de produção (ou desenvolvimento), ignorando completamente o Modo de ensaio.
+ */
+export function criarRepositorioPreferencias(
+  obterModoBuild: () => ModoBuild = obterModoBuildAtual
+): Pick<RepositorioSessoes, 'obterPreferencias' | 'salvarPreferencias'> & {
+  nomeBanco(): string;
+} {
+  return {
+    nomeBanco(): string {
+      return nomeBancoAtivo(obterModoBuild(), false);
+    },
+    obterPreferencias() {
+      const nome = nomeBancoAtivo(obterModoBuild(), false);
+      return obterRepositorioPorNome(nome).obterPreferencias();
+    },
+    salvarPreferencias(p) {
+      const nome = nomeBancoAtivo(obterModoBuild(), false);
+      return obterRepositorioPorNome(nome).salvarPreferencias(p);
+    },
+  };
+}
+
+// Acessor singleton dedicado às preferências (sempre no banco de produção/dev, nunca no de ensaio)
+export const repositorioPreferencias = criarRepositorioPreferencias();
+
+// Proxy singleton do repositório ativo (alterna sessões entre produção/dev e ensaio; preferências fixas)
 export const repositorioAtivo = criarProxyRepositorioAtivo();
 
 // Alias retrocompatível apontando para o proxy repositorioAtivo

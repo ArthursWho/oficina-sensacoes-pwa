@@ -3,11 +3,12 @@ import { registerSW } from 'virtual:pwa-register';
 import { App } from './app';
 import { audioEngine } from './audio/AudioEngine';
 import { definirPreferenciaEfeitosUi } from './audio/efeitosUi';
+import { nivelParaGanho } from './audio/volume';
 import { iniciarWakeLockGlobal } from './plataforma/wakeLock';
 import { criarControlador } from './session/controlador';
 import { sessionStore } from './session/store';
 import { pedirArmazenamentoPersistente } from './storage/persistente';
-import { repositorio } from './storage/repositorio';
+import { repositorioPreferencias } from './storage/repositorio';
 import {
   configurarAtualizadorPwa,
   marcarAtualizacaoDisponivel,
@@ -20,11 +21,15 @@ criarControlador(audioEngine, sessionStore);
 // Inicia o gerenciador global de Screen Wake Lock conectado ao store de sessão
 iniciarWakeLockGlobal(sessionStore);
 
-// Carrega a preferência de efeitos sonoros de interface do IndexedDB (store "meta")
-void repositorio
+// Carrega as preferências do operador (sons da interface + volumes das versões) do banco fixo de produção/dev
+void repositorioPreferencias
   .obterPreferencias()
   .then((prefs) => {
     definirPreferenciaEfeitosUi(prefs.efeitosUi);
+    audioEngine.definirNiveisVersao({
+      editado: nivelParaGanho(prefs.volumeEditadasPct),
+      original: nivelParaGanho(prefs.volumeOriginaisPct),
+    });
   })
   .catch(() => {});
 

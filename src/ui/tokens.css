@@ -169,7 +169,10 @@
 }
 
 .ui-btn:disabled {
-  opacity: 0.42;
+  background-color: var(--surface-alt) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--wine) !important;
+  opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;

@@ -1,19 +1,20 @@
-# Checklist de Aceitação Final no Tablet — Oficina "O Mundo a Partir do Útero" (v1.0.0)
+# Checklist de Aceitação Final no Tablet — Oficina "O Mundo a Partir do Útero" (v1.1.0)
 
 Execute este roteiro no tablet Android oficial da oficina antes do início da coleta de dados com os participantes.
 
 - **Aparelho / Modelo do Tablet**: `_____________________________________________`
 - **Versão do Chrome Android**: `_____________________________________________`
-- **Versão exibida no Menu do Operador (`1.0.0+<sha>`)**: `________________________`
+- **Versão exibida no Menu do Operador (`1.1.0+<sha>`)**: `________________________`
+- **Volumes calibrados para a coleta**: Editadas: `______%` | Originais: `______%`
 
 ---
 
-## 1. Instalação, Atualização e Diagnóstico Inicial
+## 1. Instalação, Atualização, Calibração de Volume e Diagnóstico Inicial
 
-- [ ] **1.1. Instalação / Atualização para v1.0.0**:
+- [ ] **1.1. Instalação / Atualização para v1.1.0**:
   - Com Wi-Fi ligado, abrir o app (ou atualizar pelo Menu do Operador → **Aplicativo** → **"Atualizar aplicativo"**).
   - Abrir o **Menu do Operador** (engrenagem no canto superior esquerdo) → seção **Diagnóstico** → **"Exibir diagnóstico"** e confirmar:
-    - [ ] Versão / Commit do build: `1.0.0+...`
+    - [ ] Versão / Commit do build: `1.1.0+...`
     - [ ] Modo de build: `PRODUÇÃO`
     - [ ] Banco ativo: `mundo-utero-coleta`
     - [ ] Service Worker ativo: `sim`
@@ -21,7 +22,13 @@ Execute este roteiro no tablet Android oficial da oficina antes do início da co
     - [ ] Tela sempre ligada: `ativa`
     - [ ] Armazenamento protegido: `sim`
     - [ ] Áudios pré-carregados: `13/13`
-- [ ] **1.2. Conferência do texto do TCLE na Tela 1**:
+- [ ] **1.2. Teste do Cartão "Volume das faixas" (v1.1.0)**:
+  - Na Tela 1 (TCLE), abrir o Menu do Operador e verificar o cartão **"Volume das faixas"**:
+    - [ ] Tocar em **"Tocar exemplo"** em **Editadas**: a música do Par 1 toca e o botão muda para **"Parar"**.
+    - [ ] Enquanto toca, tocar em **"Tocar exemplo"** em **Originais**: o exemplo editado para imediatamente e o original começa.
+    - [ ] Ajustar o slider e os botões `[ − ]` / `[ + ]` (testar clique único de 1% e segurar para repetição contínua) durante o exemplo: o volume muda suavemente em tempo real sem estalos.
+    - [ ] Testar o botão **"Restaurar padrão (100%)"** e depois definir os valores finais escolhidos pelo grupo, fechar e reabrir o menu para confirmar que os percentuais ficaram salvos.
+- [ ] **1.3. Conferência do texto do TCLE na Tela 1**:
   - Rolar o TCLE até a seção 12 e confirmar que o texto está íntegro conforme decisão do grupo (nota: os campos entre colchetes nas seções 9 e 10 ainda aparecem na `v1.0.0`, conforme esperado).
 
 ---

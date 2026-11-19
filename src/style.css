@@ -1160,6 +1160,19 @@ body {
   box-shadow: var(--shadow-wine);
 }
 
+.ui-operator-header--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.ui-operator-counter-number {
+  font-size: clamp(1.75rem, 1.5rem + 0.8vw, 2.15rem);
+  font-weight: 800;
+  color: var(--amber-soft);
+  line-height: 1.15;
+}
+
 .ui-operator-title {
   margin: 0;
   font-size: var(--font-size-xl);
@@ -1217,6 +1230,195 @@ body {
   font-size: 0.78rem;
   color: var(--text-muted);
   opacity: 0.85;
+}
+
+/* Cartão "Volume das faixas" no Menu do Operador (v1.1.0) */
+.ui-volume-card--disabled {
+  opacity: 0.78;
+}
+
+.ui-volume-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ui-volume-card__apoio {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.ui-volume-card__indisponivel {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.ui-volume-boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ui-volume-box {
+  background-color: #120305;
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-sm);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ui-volume-box__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.ui-volume-box__label {
+  font-size: 0.92rem; /* ~14.7px */
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ui-volume-box__value {
+  font-size: clamp(1.75rem, 1.6rem + 0.6vw, 2rem); /* 28-32px */
+  font-weight: 800;
+  color: var(--amber);
+  line-height: 1.1;
+}
+
+.ui-volume-box__controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ui-volume-box__controls--em-linha {
+  flex-direction: row;
+}
+
+.ui-volume-box__controls--empilhado {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ui-volume-box__slider-group {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ui-volume-step-btn {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  padding: 0;
+  font-size: 1.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+}
+
+.ui-volume-range {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 90px;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.ui-volume-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.ui-volume-range:focus-visible {
+  outline: none;
+}
+
+.ui-volume-range::-webkit-slider-runnable-track {
+  height: 12px;
+  background-color: var(--surface-alt);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-pill);
+}
+
+.ui-volume-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 40px;
+  height: 40px;
+  margin-top: -15px;
+  border-radius: 50%;
+  background-color: var(--amber);
+  border: 3px solid var(--bg);
+  box-shadow: var(--shadow-amber);
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+
+.ui-volume-range:active:not(:disabled)::-webkit-slider-thumb {
+  background-color: var(--amber-soft);
+  transform: scale(1.06);
+}
+
+.ui-volume-range::-moz-range-track {
+  height: 12px;
+  background-color: var(--surface-alt);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-pill);
+}
+
+.ui-volume-range::-moz-range-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--amber);
+  border: 3px solid var(--bg);
+  box-shadow: var(--shadow-amber);
+}
+
+.ui-volume-box__example-wrap {
+  width: 205px;
+  flex-shrink: 0;
+}
+
+.ui-volume-box__controls--empilhado .ui-volume-box__example-wrap {
+  width: 100%;
+}
+
+@media (max-width: 639px) {
+  .ui-volume-box__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ui-volume-box__example-wrap {
+    width: 100%;
+  }
+}
+
+.ui-volume-box__error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.ui-volume-card__footer {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Ajustes responsivos para celular retrato (412x915) e celular paisagem (915x412) */
