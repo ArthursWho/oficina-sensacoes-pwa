@@ -1,3 +1,5 @@
+@import './ui/tokens.css';
+
 /* Estilos globais mínimos para operação em tablet com pouca luz */
 *,
 *::before,
@@ -10,9 +12,10 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #0d0204;
-  color: #e6b87d;
-  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
   overscroll-behavior: none;
   user-select: none;
   -webkit-user-select: none;
@@ -33,24 +36,25 @@ body {
 .diag-container {
   width: 100%;
   max-width: 680px;
-  background-color: #1a0508;
-  border: 1px solid #3d1018;
-  border-radius: 12px;
+  background-color: var(--surface);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-md);
   padding: 1.75rem;
+  box-shadow: var(--shadow-wine);
 }
 
 .diag-title {
   margin: 0 0 0.35rem 0;
   font-size: 1.85rem;
   font-weight: 700;
-  color: #f3cfa1;
+  color: var(--amber-soft);
 }
 
 .diag-subtitle {
   margin: 0 0 1.5rem 0;
   font-size: 1.1rem;
   font-weight: 400;
-  color: #c4965f;
+  color: var(--text-muted);
 }
 
 .diag-list {
@@ -69,21 +73,21 @@ body {
   gap: 1rem;
   padding: 0.85rem 1.1rem;
   background-color: #120305;
-  border: 1px solid #2b090e;
-  border-radius: 8px;
+  border: 1px solid var(--surface-alt);
+  border-radius: 10px;
   text-align: left;
 }
 
 .diag-label {
   font-size: 1.1rem;
   font-weight: 500;
-  color: #e6b87d;
+  color: var(--text);
 }
 
 .diag-detail {
   display: block;
   font-size: 0.9rem;
-  color: #a87e4d;
+  color: var(--text-muted);
   margin-top: 0.2rem;
 }
 
@@ -115,18 +119,19 @@ body {
 
 .diag-button {
   width: 100%;
+  min-height: var(--tap-min);
   padding: 1.1rem 1.5rem;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a0508;
-  background-color: #e6b87d;
+  color: var(--bg);
+  background-color: var(--amber);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
 .diag-button:active {
-  background-color: #c4965f;
+  background-color: var(--amber-soft);
 }
 
 .diag-button:disabled {
@@ -136,6 +141,98 @@ body {
 
 .diag-footer {
   margin-top: 1.25rem;
-  font-size: 0.9rem;
-  color: #966d3e;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.diag-link {
+  color: var(--amber-soft);
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+/* Layout da Galeria de Demonstração (#componentes) */
+.demo-gallery {
+  width: 100%;
+  max-width: 920px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  text-align: left;
+  padding-bottom: var(--space-2xl);
+}
+
+.demo-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background-color: var(--surface);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+
+.demo-back-link {
+  color: var(--amber-soft);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.demo-section {
+  background-color: var(--surface);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.demo-section__title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--amber-soft);
+}
+
+.demo-subsection__title {
+  margin: var(--space-xs) 0 0 0;
+  font-size: var(--font-size-md);
+  color: var(--text-muted);
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-sm);
+}
+
+.demo-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.demo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.demo-gear-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-alt);
+  border: 1px solid var(--wine);
+  color: var(--text-muted);
 }

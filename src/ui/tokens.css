@@ -1,0 +1,558 @@
+/* Tokens globais do Design System - O Mundo a Partir do Útero */
+
+:root {
+  /* Paleta de cores (contraste AAA > 7:1 verificado: --text sobre --bg = 16.37:1, sobre --surface = 15.38:1) */
+  --bg: #0d0204;
+  --surface: #1f070b;
+  --surface-alt: #2b0a10;
+  --wine: #5a0f1e;
+  --red-deep: #8b1a2b;
+  --amber: #e8a85a;
+  --amber-soft: #f2c88f;
+  --text: #f6e3d0;
+  --text-muted: #c9a590;
+  --danger: #d9534f;
+  --ok: #7bc47f;
+
+  /* Tipografia (stack system-ui, base 20px para leitura confortável em tablet no escuro) */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 1.25rem; /* 20px */
+  --font-size-sm: 1.05rem;   /* ~16.8px */
+  --font-size-md: 1.25rem;   /* 20px */
+  --font-size-lg: 1.5rem;    /* 24px */
+  --font-size-xl: 2rem;      /* 32px */
+  --font-size-2xl: 2.5rem;   /* 40px */
+  --line-height-base: 1.6;
+  --line-height-heading: 1.25;
+
+  /* Espaçamentos */
+  --space-2xs: 0.375rem; /* 6px */
+  --space-xs: 0.625rem;  /* 10px */
+  --space-sm: 0.875rem;  /* 14px */
+  --space-md: 1.25rem;   /* 20px */
+  --space-lg: 1.75rem;   /* 28px */
+  --space-xl: 2.5rem;    /* 40px */
+  --space-2xl: 3.5rem;   /* 56px */
+
+  /* Raios arredondados grandes (visual orgânico / líquido) */
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-pill: 9999px;
+
+  /* Sombras suaves em âmbar e vinho */
+  --shadow-wine: 0 10px 30px rgba(13, 2, 4, 0.75), 0 0 24px rgba(90, 15, 30, 0.35);
+  --shadow-amber: 0 0 18px rgba(232, 168, 90, 0.22);
+  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 6px var(--amber-soft);
+
+  /* Alvos de toque */
+  --tap-min: 64px;
+
+  /* Movimento */
+  --fade-duracao: 500ms;
+  --transicao: 350ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fade-duracao: 1ms;
+    --transicao: 1ms linear;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Estilos dos componentes do Design System */
+
+/* 1. Button */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: var(--tap-min);
+  padding: 0.85rem 1.75rem;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  line-height: 1.2;
+  border-radius: var(--radius-lg);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--transicao),
+    border-color var(--transicao),
+    color var(--transicao),
+    transform var(--transicao),
+    box-shadow var(--transicao);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ui-btn--full {
+  width: 100%;
+}
+
+.ui-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.ui-btn--primary {
+  background-color: var(--amber);
+  color: var(--bg);
+  border-color: var(--amber-soft);
+  box-shadow: var(--shadow-amber);
+}
+
+.ui-btn--primary:active:not(:disabled),
+.ui-btn--primary.ui-btn--pressed {
+  background-color: var(--amber-soft);
+  transform: scale(0.98);
+}
+
+.ui-btn--secondary {
+  background-color: var(--wine);
+  color: var(--text);
+  border-color: var(--red-deep);
+}
+
+.ui-btn--secondary:active:not(:disabled),
+.ui-btn--secondary.ui-btn--pressed {
+  background-color: var(--red-deep);
+  transform: scale(0.98);
+}
+
+.ui-btn--ghost {
+  background-color: transparent;
+  color: var(--amber-soft);
+  border-color: var(--wine);
+}
+
+.ui-btn--ghost:active:not(:disabled),
+.ui-btn--ghost.ui-btn--pressed {
+  background-color: var(--surface-alt);
+  border-color: var(--amber);
+  transform: scale(0.98);
+}
+
+.ui-btn--danger {
+  background-color: rgba(217, 83, 79, 0.18);
+  color: #ffb3b0;
+  border-color: var(--danger);
+}
+
+.ui-btn--danger:active:not(:disabled),
+.ui-btn--danger.ui-btn--pressed {
+  background-color: var(--danger);
+  color: var(--bg);
+  transform: scale(0.98);
+}
+
+.ui-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.ui-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 2. Checkbox grande */
+.ui-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: var(--tap-min);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--surface);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    background-color var(--transicao),
+    border-color var(--transicao),
+    box-shadow var(--transicao);
+  text-align: left;
+}
+
+.ui-checkbox--checked {
+  background-color: var(--surface-alt);
+  border-color: var(--amber);
+  box-shadow: var(--shadow-amber);
+}
+
+.ui-checkbox--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-checkbox__input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.ui-checkbox__box {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 2px solid var(--amber-soft);
+  background-color: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color var(--transicao), border-color var(--transicao);
+}
+
+.ui-checkbox--checked .ui-checkbox__box {
+  background-color: var(--amber);
+  border-color: var(--amber-soft);
+  color: var(--bg);
+}
+
+.ui-checkbox__input:focus-visible + .ui-checkbox__box {
+  box-shadow: var(--focus-ring);
+}
+
+.ui-checkbox__label {
+  font-size: var(--font-size-md);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* 3. RadioGroup grande */
+.ui-radiogroup {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.ui-radiogroup__legend {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--amber-soft);
+  margin-bottom: var(--space-xs);
+  text-align: left;
+}
+
+.ui-radio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: var(--tap-min);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--surface);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    background-color var(--transicao),
+    border-color var(--transicao),
+    box-shadow var(--transicao);
+  text-align: left;
+}
+
+.ui-radio--selected {
+  background-color: var(--surface-alt);
+  border-color: var(--amber);
+  box-shadow: var(--shadow-amber);
+}
+
+.ui-radio--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-radio__input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.ui-radio__circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--amber-soft);
+  background-color: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ui-radio__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--amber);
+  transform: scale(0);
+  transition: transform var(--transicao);
+}
+
+.ui-radio--selected .ui-radio__dot {
+  transform: scale(1);
+}
+
+.ui-radio__input:focus-visible + .ui-radio__circle {
+  box-shadow: var(--focus-ring);
+}
+
+.ui-radio__label {
+  font-size: var(--font-size-md);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* 4. TextField */
+.ui-textfield {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  text-align: left;
+}
+
+.ui-textfield__label {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--amber-soft);
+}
+
+.ui-textfield__note {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2xs) 0;
+}
+
+.ui-textfield__input {
+  min-height: var(--tap-min);
+  padding: 0.75rem 1.15rem;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  color: var(--text);
+  background-color: var(--bg);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transicao), box-shadow var(--transicao);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.ui-textfield__input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.ui-textfield__input:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: var(--focus-ring);
+}
+
+.ui-textfield__input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 5. ScrollArea */
+.ui-scrollarea-wrapper {
+  position: relative;
+  background-color: var(--surface);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-wine);
+}
+
+.ui-scrollarea {
+  overflow-y: auto;
+  padding: var(--space-lg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber) var(--surface-alt);
+  text-align: left;
+}
+
+.ui-scrollarea::-webkit-scrollbar {
+  width: 10px;
+}
+
+.ui-scrollarea::-webkit-scrollbar-track {
+  background: var(--surface-alt);
+  border-radius: var(--radius-pill);
+}
+
+.ui-scrollarea::-webkit-scrollbar-thumb {
+  background-color: var(--amber);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--surface-alt);
+}
+
+.ui-scrollarea__more {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem var(--space-md) 0.65rem;
+  background: linear-gradient(to bottom, rgba(31, 7, 11, 0), rgba(13, 2, 4, 0.96) 65%);
+  color: var(--amber-soft);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+  transition: opacity var(--transicao);
+}
+
+.ui-scrollarea__more--hidden {
+  opacity: 0;
+}
+
+/* 6. TcleViewer */
+.ui-tcle {
+  color: var(--text);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+.ui-tcle__header {
+  border-bottom: 1px solid var(--wine);
+  padding-bottom: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.ui-tcle__title {
+  font-size: var(--font-size-xl);
+  color: var(--amber-soft);
+  margin: 0 0 var(--space-sm) 0;
+  line-height: var(--line-height-heading);
+}
+
+.ui-tcle__subtitle {
+  margin: 0.35rem 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.ui-tcle__section {
+  margin-bottom: var(--space-lg);
+}
+
+.ui-tcle__section-title {
+  font-size: var(--font-size-lg);
+  color: var(--amber-soft);
+  margin: 0 0 var(--space-xs) 0;
+  line-height: var(--line-height-heading);
+}
+
+.ui-tcle__paragraph {
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.ui-tcle__list {
+  margin: 0 0 var(--space-sm) 0;
+  padding-left: 1.6rem;
+}
+
+.ui-tcle__list-item {
+  margin-bottom: var(--space-xs);
+}
+
+.ui-tcle__note {
+  margin: var(--space-xs) 0 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.ui-tcle__pending {
+  background-color: rgba(217, 83, 79, 0.28);
+  color: #ffd43b;
+  text-decoration: underline wavy var(--danger);
+  text-underline-offset: 4px;
+  padding: 0.05rem 0.35rem;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+/* 7. ProgressoPar */
+.ui-progresso-par {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 1rem;
+  background-color: var(--surface-alt);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+/* 8. Modal de confirmação */
+.ui-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(13, 2, 4, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  z-index: 1000;
+}
+
+.ui-modal {
+  width: 100%;
+  max-width: 540px;
+  background-color: var(--surface);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-wine);
+  text-align: center;
+}
+
+.ui-modal__title {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: var(--font-size-lg);
+  color: var(--amber-soft);
+}
+
+.ui-modal__message {
+  margin: 0 0 var(--space-lg) 0;
+  font-size: var(--font-size-md);
+  color: var(--text);
+}
+
+.ui-modal__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+/* 9. IconeEngrenagem */
+.ui-icon-gear {
+  display: inline-block;
+  vertical-align: middle;
+  color: currentColor;
+}

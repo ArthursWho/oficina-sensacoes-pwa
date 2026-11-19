@@ -11,13 +11,29 @@ npm install
 npm run dev
 ```
 
-Para verificar a tipagem TypeScript:
+- Abra a URL padrão para ver o **Painel de Diagnóstico (Etapa 1)**.
+- Adicione `#componentes` ao endereço (ex.: `http://localhost:5173/#componentes`) para abrir a **Galeria de Componentes e TCLE (Etapa 2)**.
+
+Para verificar a tipagem TypeScript e rodar os testes automatizados:
 
 ```bash
 npm run typecheck
+npm run test
 ```
 
-## 2. Como fazer o build e testar o Service Worker localmente
+## 2. Verificação de pendências antes do release final (`check:release`)
+
+Antes da publicação final para a oficina, **todas as pendências do TCLE** em `src/content/tcle.ts` (`PENDENCIAS`: nome/e-mail da professora, nome/contato do representante e `enquadramentoEticoConfirmado: true`) devem estar preenchidas.
+
+Execute:
+
+```bash
+npm run check:release
+```
+
+> **Importante:** Este comando falha (`exit 1`) enquanto `temPendencias()` for `true`. Ele **deve passar sem erros** antes da publicação final para a oficina (não está incluído no `npm run build` normal para permitir builds de teste durante o desenvolvimento).
+
+## 3. Como fazer o build e testar o Service Worker localmente
 
 Gere a versão de produção na pasta `dist/` e inicie o servidor de pré-visualização:
 
@@ -26,9 +42,9 @@ npm run build
 npm run preview
 ```
 
-Acesse o endereço exibido no terminal (ex.: `http://localhost:4173`) pelo navegador para validar o registro do Service Worker e o pré-cache dos arquivos de áudio.
+Acesse o endereço exibido no terminal (ex.: `http://localhost:4173`) pelo navegador para validar o registro do Service Worker e o pré-cache dos 13 arquivos de áudio.
 
-## 3. Como publicar no GitHub Pages
+## 4. Como publicar no GitHub Pages
 
 O projeto já inclui o workflow `.github/workflows/deploy.yml` que publica automaticamente a pasta `dist` a cada push na branch `main`.
 
@@ -37,7 +53,7 @@ Passo a passo para ativar:
    ```bash
    git init
    git add .
-   git commit -m "Etapa 1: fundação PWA"
+   git commit -m "Etapa 2: conteúdo e design system"
    git branch -M main
    git remote add origin https://github.com/<SEU_USUARIO>/<SEU_REPOSITORIO>.git
    git push -u origin main
@@ -46,11 +62,11 @@ Passo a passo para ativar:
 3. Em **Build and deployment > Source**, selecione **GitHub Actions**.
 4. Aguarde a conclusão do workflow na aba **Actions**; a URL HTTPS pública será gerada automaticamente.
 
-## 4. Instruções de instalação no tablet Android
+## 5. Instruções de instalação no tablet Android
 
 1. Conecte o tablet à internet e abra a URL HTTPS do projeto no **Google Chrome**.
 2. Aguarde alguns segundos até o painel de diagnóstico exibir **"a) Service Worker ativo: OK"** (isso confirma que o app e os 13 áudios foram baixados para o cache offline).
-3. Toque em **"Testar áudio em cache"** para confirmar que o áudio responde `OK`.
+3. Toque em **"Testar áudio em cache"** para confirmar que o áudio `batimentos.mp3` responde `OK`.
 4. Abra o menu do Chrome (três pontos no canto superior direito) e toque em **"Instalar aplicativo"** ou **"Adicionar à tela inicial"**.
 5. Feche o Chrome, ative o **Modo Avião** do tablet e abra o aplicativo pelo ícone **"Útero"** na tela inicial.
 6. Verifique se o item **"b) Modo de exibição atual"** mostra `fullscreen` ou `standalone` e se o botão **"Testar áudio em cache"** continua respondendo `OK` mesmo offline.

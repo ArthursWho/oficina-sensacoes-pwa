@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
+import { BATIMENTOS_SRC } from './content/tracks';
+import { GaleriaComponentes } from './ui/GaleriaComponentes';
 
 type DisplayMode = 'fullscreen' | 'standalone' | 'browser';
 
@@ -19,6 +21,7 @@ function getDisplayMode(): DisplayMode {
 }
 
 export function App() {
+  const [hash, setHash] = useState<string>(() => window.location.hash);
   const [swActive, setSwActive] = useState<boolean>(false);
   const [swDetail, setSwDetail] = useState<string>('Verificando registro...');
   const [displayMode, setDisplayMode] = useState<DisplayMode>(getDisplayMode);
@@ -30,6 +33,12 @@ export function App() {
     status: 'IDLE',
     detail: 'Toque no botão abaixo para testar',
   });
+
+  useEffect(() => {
+    const onHashChange = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   useEffect(() => {
     // a) Verificação do Service Worker ativo
@@ -65,14 +74,12 @@ export function App() {
 
     checkSw();
 
-    // Escuta mudanças de estado do SW
     const onSwReady = () => {
       checkSw();
     };
     window.addEventListener('pwa-sw-ready', onSwReady);
     navigator.serviceWorker?.addEventListener('controllerchange', checkSw);
 
-    // Polling curto inicial para refletir ativação do SW na primeira abertura
     const intervalId = window.setInterval(checkSw, 1500);
 
     // b) Monitoramento do modo de exibição
@@ -101,7 +108,9 @@ export function App() {
           persisted = await navigator.storage.persist();
         }
         setStoragePersisted(persisted);
-        setStorageDetail(persisted ? 'Concedido pelo navegador' : 'Não concedido (modo padrão)');
+        setStorageDetail(
+          persisted ? 'Concedido pelo navegador' : 'Não concedido (modo padrão)'
+        );
       } catch {
         setStoragePersisted(false);
         setStorageDetail('Erro ao consultar persistência');
@@ -121,32 +130,31 @@ export function App() {
     };
   }, []);
 
-  // f) Teste de cache do áudio (tenta ./audio/batimentos.mp3 e fallback para ./audio/batimentos.mp3.mp3 caso mantenha o nome original com dupla extensão)
+  // Rota simples por hash: #componentes exibe a galeria da Etapa 2
+  if (hash === '#componentes') {
+    return <GaleriaComponentes />;
+  }
+
+  // f) Teste de cache do áudio apontando para ./audio/batimentos.mp3
   const handleTestAudio = async () => {
     setAudioTest({ status: 'TESTING', detail: 'Buscando áudio...' });
 
-    const candidateUrls = ['./audio/batimentos.mp3', './audio/batimentos.mp3.mp3'];
-
-    for (const url of candidateUrls) {
-      try {
-        const response = await fetch(url);
-        const contentType = response.headers.get('content-type') || '';
-        // Evita falso positivo caso o navigateFallback retorne index.html para uma URL inexistente
-        if (response.ok && !contentType.includes('text/html')) {
-          const buffer = await response.arrayBuffer();
-          if (buffer.byteLength > 0) {
-            const sizeKb = (buffer.byteLength / 1024).toFixed(1);
-            const fileName = url.replace('./audio/', '');
-            setAudioTest({
-              status: 'OK',
-              detail: `Resposta OK (${fileName} — ${sizeKb} KB)`,
-            });
-            return;
-          }
+    try {
+      const response = await fetch(BATIMENTOS_SRC);
+      const contentType = response.headers.get('content-type') || '';
+      if (response.ok && !contentType.includes('text/html')) {
+        const buffer = await response.arrayBuffer();
+        if (buffer.byteLength > 0) {
+          const sizeKb = (buffer.byteLength / 1024).toFixed(1);
+          setAudioTest({
+            status: 'OK',
+            detail: `Resposta OK (batimentos.mp3 — ${sizeKb} KB)`,
+          });
+          return;
         }
-      } catch {
-        // Continua para o próximo candidato ou reporta ausência abaixo
       }
+    } catch {
+      // Tratado abaixo como arquivo ausente
     }
 
     setAudioTest({
@@ -155,7 +163,8 @@ export function App() {
     });
   };
 
-  const isInstalledDisplay = displayMode === 'fullscreen' || displayMode === 'standalone';
+  const isInstalledDisplay =
+    displayMode === 'fullscreen' || displayMode === 'standalone';
 
   return (
     <main class="diag-container">
@@ -180,8 +189,14 @@ export function App() {
             <span class="diag-label">b) Modo de exibição atual</span>
             <span class="diag-detail">display-mode: {displayMode}</span>
           </div>
-          <span class={`diag-status ${isInstalledDisplay ? 'status-ok' : 'status-pending'}`}>
-            {isInstalledDisplay ? `OK (${displayMode})` : `FALHA (${displayMode})`}
+          <span
+            class={`diag-status ${
+              isInstalledDisplay ? 'status-ok' : 'status-pending'
+            }`}
+          >
+            {isInstalledDisplay
+              ? `OK (${displayMode})`
+              : `FALHA (${displayMode})`}
           </span>
         </li>
 
@@ -213,7 +228,11 @@ export function App() {
                 : 'status-fail'
             }`}
           >
-            {storagePersisted === null ? '...' : storagePersisted ? 'OK' : 'FALHA'}
+            {storagePersisted === null
+              ? '...'
+              : storagePersisted
+              ? 'OK'
+              : 'FALHA'}
           </span>
         </li>
 
@@ -222,10 +241,16 @@ export function App() {
           <div>
             <span class="diag-label">e) Wake Lock API disponível</span>
             <span class="diag-detail">
-              {'wakeLock' in navigator ? 'Suportado pelo navegador' : 'Não suportado'}
+              {'wakeLock' in navigator
+                ? 'Suportado pelo navegador'
+                : 'Não suportado'}
             </span>
           </div>
-          <span class={`diag-status ${wakeLockAvailable ? 'status-ok' : 'status-fail'}`}>
+          <span
+            class={`diag-status ${
+              wakeLockAvailable ? 'status-ok' : 'status-fail'
+            }`}
+          >
             {wakeLockAvailable ? 'OK' : 'FALHA'}
           </span>
         </li>
@@ -264,7 +289,12 @@ export function App() {
       </button>
 
       <footer class="diag-footer">
-        Versão do build: <strong>{__BUILD_VERSION__}</strong>
+        <span>
+          Versão do build: <strong>{__BUILD_VERSION__}</strong>
+        </span>
+        <a href="#componentes" class="diag-link">
+          Abrir Galeria de Componentes (#componentes) →
+        </a>
       </footer>
     </main>
   );
