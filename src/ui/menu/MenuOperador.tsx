@@ -3,8 +3,11 @@ import { STRINGS } from '../../content/strings';
 import {
   baixarArquivo,
   compartilharArquivo,
+  compartilharTexto,
   copiarComoTexto,
-  podeCompartilhar,
+  prepararCompartilhamento,
+  PreparoCompartilhamento,
+  ResultadoCompartilhamento,
 } from '../../export/baixar';
 import { gerarCsv, gerarCsvBlob } from '../../export/csv';
 import { achatarSessoes } from '../../export/linhas';
@@ -35,8 +38,14 @@ export interface MenuOperadorProps {
 
 interface UltimoArquivoGerado {
   nome: string;
-  arquivo: File | null;
+  blob: Blob;
   textoCsv: string;
+  preparoShare: PreparoCompartilhamento;
+}
+
+interface ErroShareUi {
+  amigavel: string;
+  detalheTecnico: string;
 }
 
 // Botão global de engrenagem + Painel sobreposto do Menu do Operador
@@ -55,12 +64,13 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
   const [infoStorage, setInfoStorage] =
     useState<EstadoArmazenamentoDispositivo | null>(null);
 
-  // Estado da exportação
+  // Estado da exportação e compartilhamento
   const [gerandoExportacao, setGerandoExportacao] = useState<boolean>(false);
   const [statusExportacao, setStatusExportacao] = useState<string>('');
   const [erroExportacao, setErroExportacao] = useState<string>('');
   const [ultimoGerado, setUltimoGerado] =
     useState<UltimoArquivoGerado | null>(null);
+  const [erroShare, setErroShare] = useState<ErroShareUi | null>(null);
   const [mostrarTextareaFallback, setMostrarTextareaFallback] =
     useState<boolean>(false);
   const [msgCopia, setMsgCopia] = useState<string>('');
@@ -91,6 +101,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
 
   const abrirPainelMenu = () => {
     setErroExportacao('');
+    setErroShare(null);
     setMsgCopia('');
     setMenuAberto(true);
     void carregarDadosMenu();
@@ -123,7 +134,6 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     }
 
     if (estado.fase === 'tcle') {
-      // Em fase "tcle", REINICIAR é ignorado pela máquina: fecha o menu e incrementa chaveSessao para remontar a TelaTcle
       setMenuAberto(false);
       onRemontarTcle();
       return;
@@ -153,6 +163,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     if (gerandoExportacao) return;
     setGerandoExportacao(true);
     setErroExportacao('');
+    setErroShare(null);
     setStatusExportacao('Gerando arquivo…');
     setMsgCopia('');
     setMostrarTextareaFallback(false);
@@ -171,16 +182,16 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
       const nome = nomeArquivoExportacao(formato, agora, sessoes.length);
       const textoCsv = gerarCsv(linhas);
 
-      let blob: Blob;
-      let mime: string;
-      if (formato === 'csv') {
-        blob = gerarCsvBlob(linhas);
-        mime = 'text/csv;charset=utf-8';
-      } else {
-        blob = await gerarXlsx(linhas);
-        mime =
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      }
+      const blob =
+        formato === 'csv' ? gerarCsvBlob(linhas) : await gerarXlsx(linhas);
+
+      // Cria o File e escolhe a variante via canShare UMA VEZ no momento da geração
+      const preparoShare = prepararCompartilhamento({
+        formato,
+        blobDownload: blob,
+        nomeOriginal: nome,
+        textoCsvSemBom: textoCsv,
+      });
 
       const resDownload = baixarArquivo(blob, nome);
       if (!resDownload.ok) {
@@ -195,19 +206,11 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
       const ids = sessoes.map((s) => s.id_participante);
       await repositorio.registrarExportacao(ids, agora);
 
-      let arquivoFile: File | null = null;
-      if (typeof File !== 'undefined') {
-        try {
-          arquivoFile = new File([blob], nome, { type: mime });
-        } catch {
-          arquivoFile = null;
-        }
-      }
-
       setUltimoGerado({
         nome,
-        arquivo: arquivoFile,
+        blob,
         textoCsv,
+        preparoShare,
       });
       setStatusExportacao(STRINGS.arquivoGerado.replace('{nome}', nome));
       await carregarDadosMenu();
@@ -221,12 +224,46 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     }
   };
 
-  const handleCompartilhar = async () => {
-    if (!ultimoGerado?.arquivo) return;
-    const res = await compartilharArquivo(ultimoGerado.arquivo);
-    if (!res.ok && res.motivo) {
-      setMsgCopia(res.motivo);
+  const tratarResultadoShare = (
+    res: ResultadoCompartilhamento,
+    variante: number | null
+  ) => {
+    if (res.ok || res.cancelado) {
+      // AbortError (cancelado pelo usuário) não é erro e não exibe mensagem
+      setErroShare(null);
+      return;
     }
+
+    const detalhe = STRINGS.detalheTecnicoCompartilhar
+      .replace('{nome}', res.nome ?? 'Error')
+      .replace('{mensagem}', res.mensagem ?? 'Falha desconhecida')
+      .replace('{n}', String(variante ?? '—'));
+
+    setErroShare({
+      amigavel: STRINGS.erroCompartilharAmigavel,
+      detalheTecnico: detalhe,
+    });
+  };
+
+  // Handler SÍNCRONO para "Compartilhar arquivo" (variantes 1 ou 2)
+  const handleCompartilharArquivo = () => {
+    const prep = ultimoGerado?.preparoShare;
+    if (!prep || !prep.arquivo) return;
+    setErroShare(null);
+    // Chamada síncrona direta a compartilharArquivo (que chama navigator.share no mesmo tick)
+    compartilharArquivo(prep.arquivo).then((res) =>
+      tratarResultadoShare(res, prep.variante)
+    );
+  };
+
+  // Handler SÍNCRONO para "Compartilhar como texto" (variante 3)
+  const handleCompartilharTexto = () => {
+    const prep = ultimoGerado?.preparoShare;
+    if (!prep) return;
+    setErroShare(null);
+    compartilharTexto(prep.nomeOriginal, prep.textoCsvSemBom).then((res) =>
+      tratarResultadoShare(res, prep.variante)
+    );
   };
 
   const handleCopiarTexto = async () => {
@@ -251,8 +288,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     ? 'sim'
     : 'não';
 
-  const compartilhamentoSuportado =
-    ultimoGerado?.arquivo != null && podeCompartilhar(ultimoGerado.arquivo);
+  const modoShare = ultimoGerado?.preparoShare.modo ?? 'indisponivel';
 
   return (
     <>
@@ -391,13 +427,19 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
               </div>
 
               {statusExportacao && (
-                <div class="diag-status status-ok" style={{ whiteSpace: 'normal' }}>
+                <div
+                  class="diag-status status-ok"
+                  style={{ whiteSpace: 'normal' }}
+                >
                   {statusExportacao}
                 </div>
               )}
 
               {erroExportacao && (
-                <div class="diag-status status-fail" style={{ whiteSpace: 'normal' }}>
+                <div
+                  class="diag-status status-fail"
+                  style={{ whiteSpace: 'normal' }}
+                >
                   {erroExportacao}
                 </div>
               )}
@@ -405,13 +447,22 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
               {ultimoGerado && (
                 <div class="demo-stack">
                   <div class="demo-grid">
-                    {compartilhamentoSuportado && (
+                    {modoShare === 'arquivo' && (
                       <Button
                         variant="secondary"
                         fullWidth
-                        onClick={handleCompartilhar}
+                        onClick={handleCompartilharArquivo}
                       >
                         {STRINGS.compartilhar}
+                      </Button>
+                    )}
+                    {modoShare === 'texto' && (
+                      <Button
+                        variant="secondary"
+                        fullWidth
+                        onClick={handleCompartilharTexto}
+                      >
+                        {STRINGS.compartilharTexto}
                       </Button>
                     )}
                     <Button
@@ -422,6 +473,17 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
                       {STRINGS.copiarTexto}
                     </Button>
                   </div>
+
+                  {erroShare && (
+                    <div class="ui-operator-share-error" role="alert">
+                      <p class="ui-operator-share-error__msg">
+                        {erroShare.amigavel}
+                      </p>
+                      <span class="ui-operator-share-error__tech">
+                        {erroShare.detalheTecnico}
+                      </span>
+                    </div>
+                  )}
 
                   {msgCopia && <p class="diag-detail">{msgCopia}</p>}
 

@@ -3,6 +3,7 @@ import { AudioLab } from './audio/AudioLab';
 import { sessionStore } from './session/store';
 import { Estado } from './session/tipos';
 import { ArmazenamentoLab } from './ui/ArmazenamentoLab';
+import { CompartilharLab } from './ui/CompartilharLab';
 import { GaleriaComponentes } from './ui/GaleriaComponentes';
 import { MenuOperador } from './ui/menu/MenuOperador';
 import { SessaoLab } from './ui/SessaoLab';
@@ -53,6 +54,9 @@ export function App() {
   }
   if (hash === '#armazenamento-lab') {
     return <ArmazenamentoLab />;
+  }
+  if (hash === '#compartilhar-lab') {
+    return <CompartilharLab />;
   }
 
   // Rota padrão (sem hash): fluxo principal renderizado a partir de estado.fase

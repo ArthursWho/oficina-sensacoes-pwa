@@ -18,8 +18,13 @@ import {
   AncoraDownloadMinima,
   baixarArquivo,
   compartilharArquivo,
+  compartilharTexto,
   copiarComoTexto,
+  MIME_SHARE_CSV,
+  MIME_SHARE_TXT,
+  MIME_SHARE_XLSX,
   podeCompartilhar,
+  prepararCompartilhamento,
 } from './baixar';
 import { gerarCsv, gerarCsvBlob } from './csv';
 import { achatarSessoes, COLUNAS } from './linhas';
@@ -338,7 +343,6 @@ describe('Etapa 8 — Menu do Operador, Migração IndexedDB v2 e Exportação C
       share: async () => {},
     };
     expect(podeCompartilhar(arq, navShareFalse)).toBe(false);
-    expect((await compartilharArquivo(arq, navShareFalse)).ok).toBe(false);
 
     // copiarComoTexto: sucesso e fallback sem clipboard
     let textoCopiado = '';
@@ -352,6 +356,189 @@ describe('Etapa 8 — Menu do Operador, Migração IndexedDB v2 e Exportação C
     expect(await copiarComoTexto('linha1;linha2', navClipOk)).toBe(true);
     expect(textoCopiado).toBe('linha1;linha2');
     expect(await copiarComoTexto('linha1;linha2', {})).toBe(false);
+  });
+
+  it('Etapa 8.1 (a & e) prepararCompartilhamento escolhe a variante correta via canShare (1, 2, 3 ou indisponivel quando navigator.share ausente)', () => {
+    const s1 = criarSessaoValida(1);
+    const csvSemBom = gerarCsv(s1.linhas);
+    const blobCsv = gerarCsvBlob(s1.linhas);
+    const nomeCsv = 'mundo-utero_20261119-030000_1sessoes.csv';
+
+    // Caso 1: canShare verdadeiro para tudo -> variante 1 ("text/csv", .csv)
+    const prep1 = prepararCompartilhamento({
+      formato: 'csv',
+      blobDownload: blobCsv,
+      nomeOriginal: nomeCsv,
+      textoCsvSemBom: csvSemBom,
+      nav: {
+        canShare: () => true,
+        share: async () => {},
+      },
+    });
+    expect(prep1.variante).toBe(1);
+    expect(prep1.modo).toBe('arquivo');
+    expect(prep1.arquivo?.type).toBe(MIME_SHARE_CSV);
+    expect(prep1.arquivo?.name).toBe(nomeCsv);
+
+    // Caso 2: falso para "text/csv" e verdadeiro para "text/plain" -> variante 2 (CSV como .txt)
+    const prep2 = prepararCompartilhamento({
+      formato: 'csv',
+      blobDownload: blobCsv,
+      nomeOriginal: nomeCsv,
+      textoCsvSemBom: csvSemBom,
+      nav: {
+        canShare: (data) => {
+          const f = data?.files?.[0];
+          return f?.type === MIME_SHARE_TXT;
+        },
+        share: async () => {},
+      },
+    });
+    expect(prep2.variante).toBe(2);
+    expect(prep2.modo).toBe('arquivo');
+    expect(prep2.arquivo?.type).toBe(MIME_SHARE_TXT);
+    expect(prep2.arquivo?.name).toBe('mundo-utero_20261119-030000_1sessoes.txt');
+
+    // Caso 3: canShare falso para todos os arquivos, mas navigator.share presente -> variante 3 (texto) e arquivo null
+    const prep3 = prepararCompartilhamento({
+      formato: 'csv',
+      blobDownload: blobCsv,
+      nomeOriginal: nomeCsv,
+      textoCsvSemBom: csvSemBom,
+      nav: {
+        canShare: () => false,
+        share: async () => {},
+      },
+    });
+    expect(prep3.variante).toBe(3);
+    expect(prep3.modo).toBe('texto');
+    expect(prep3.arquivo).toBeNull();
+
+    // Caso 4 (e): navigator.share ausente -> modo "indisponivel" (botão oculto, sem erro)
+    const prepAusente = prepararCompartilhamento({
+      formato: 'csv',
+      blobDownload: blobCsv,
+      nomeOriginal: nomeCsv,
+      textoCsvSemBom: csvSemBom,
+      nav: {},
+    });
+    expect(prepAusente.variante).toBeNull();
+    expect(prepAusente.modo).toBe('indisponivel');
+    expect(prepAusente.arquivo).toBeNull();
+  });
+
+  it('Etapa 8.1 (b) File compartilhado de CSV tem type exatamente "text/csv" (com BOM nos bytes), XLSX tem MIME oficial, e Blob de download permanece inalterado', async () => {
+    const s1 = criarSessaoValida(1);
+    const csvSemBom = gerarCsv(s1.linhas);
+    const blobCsv = gerarCsvBlob(s1.linhas);
+    const blobXlsx = await gerarXlsx(s1.linhas);
+
+    const navTudoOk = {
+      canShare: () => true,
+      share: async () => {},
+    };
+
+    const prepCsv = prepararCompartilhamento({
+      formato: 'csv',
+      blobDownload: blobCsv,
+      nomeOriginal: 'teste.csv',
+      textoCsvSemBom: csvSemBom,
+      nav: navTudoOk,
+    });
+    expect(prepCsv.arquivo?.type).toBe('text/csv');
+    expect(blobCsv.type).toBe('text/csv;charset=utf-8');
+
+    const bytesFileCsv = new Uint8Array(await prepCsv.arquivo!.arrayBuffer());
+    expect(bytesFileCsv[0]).toBe(0xef);
+    expect(bytesFileCsv[1]).toBe(0xbb);
+    expect(bytesFileCsv[2]).toBe(0xbf);
+
+    const prepXlsx = prepararCompartilhamento({
+      formato: 'xlsx',
+      blobDownload: blobXlsx,
+      nomeOriginal: 'teste.xlsx',
+      textoCsvSemBom: csvSemBom,
+      nav: navTudoOk,
+    });
+    expect(prepXlsx.arquivo?.type).toBe(MIME_SHARE_XLSX);
+    expect(blobXlsx.type).toBe(MIME_SHARE_XLSX);
+  });
+
+  it('Etapa 8.1 (c & f) compartilharArquivo e compartilharTexto chamam navigator.share SINCRONAMENTE no mesmo tick do clique; compartilharTexto envia CSV SEM BOM', async () => {
+    const s1 = criarSessaoValida(1);
+    const csvSemBom = gerarCsv(s1.linhas);
+    const blobCsv = gerarCsvBlob(s1.linhas);
+    const filePreCriado = new File([blobCsv], 'dados.csv', {
+      type: MIME_SHARE_CSV,
+    });
+
+    let shareChamadoSincronamente = false;
+    let payloadRecebido: ShareData | undefined;
+
+    const navSincrono = {
+      canShare: () => true,
+      share: (data?: ShareData) => {
+        shareChamadoSincronamente = true;
+        payloadRecebido = data;
+        return Promise.resolve();
+      },
+    };
+
+    // Inicia compartilharArquivo sem await e verifica no MESMO tick que navigator.share já foi invocado
+    const promessaArq = compartilharArquivo(filePreCriado, navSincrono);
+    expect(shareChamadoSincronamente).toBe(true);
+    // Verifica que o payload tem APENAS { files: [file] } (sem title e sem text)
+    expect(Object.keys(payloadRecebido ?? {})).toEqual(['files']);
+    expect(payloadRecebido?.files?.[0]).toBe(filePreCriado);
+    expect((await promessaArq).ok).toBe(true);
+
+    // Agora testa compartilharTexto (Variante 3): chamada síncrona e texto SEM BOM
+    shareChamadoSincronamente = false;
+    payloadRecebido = undefined;
+
+    const promessaTxt = compartilharTexto('dados.csv', csvSemBom, navSincrono);
+    expect(shareChamadoSincronamente).toBe(true);
+    expect(payloadRecebido).toEqual({
+      title: 'dados.csv',
+      text: csvSemBom,
+    });
+    const textoEnviado = (payloadRecebido as ShareData | undefined)?.text ?? '';
+    const bytesTexto = new TextEncoder().encode(textoEnviado);
+    expect(bytesTexto[0]).not.toBe(0xef); // Sem BOM UTF-8
+    expect((await promessaTxt).ok).toBe(true);
+  });
+
+  it('Etapa 8.1 (d) AbortError retorna { ok: false, cancelado: true } sem mensagem de erro; NotAllowedError retorna nome/mensagem para mensagem amigável + detalhe técnico', async () => {
+    const file = new File(['a;b'], 'teste.csv', { type: MIME_SHARE_CSV });
+
+    // 1. AbortError (usuário fechou a folha de compartilhamento)
+    const navAbort = {
+      share: () =>
+        Promise.reject(new DOMException('Share canceled', 'AbortError')),
+    };
+    const resAbort = await compartilharArquivo(file, navAbort);
+    expect(resAbort.ok).toBe(false);
+    expect(resAbort.cancelado).toBe(true);
+    expect(resAbort.nome).toBe('AbortError');
+
+    // 2. NotAllowedError ("Permission Denied")
+    const navNotAllowed = {
+      share: () =>
+        Promise.reject(new DOMException('Permission denied', 'NotAllowedError')),
+    };
+    const resNotAllowed = await compartilharArquivo(file, navNotAllowed);
+    expect(resNotAllowed.ok).toBe(false);
+    expect(resNotAllowed.cancelado).toBe(false);
+    expect(resNotAllowed.nome).toBe('NotAllowedError');
+    expect(resNotAllowed.mensagem).toBe('Permission denied');
+
+    const detalheFormatado = STRINGS.detalheTecnicoCompartilhar
+      .replace('{nome}', resNotAllowed.nome ?? '')
+      .replace('{mensagem}', resNotAllowed.mensagem ?? '')
+      .replace('{n}', '1');
+    expect(detalheFormatado).toBe(
+      'Detalhe técnico: NotAllowedError — Permission denied (variante 1)'
+    );
   });
 
   it('g) logicaMenu: aoTocarEngrenagem em cada fase e acoesMenu em todas as combinações', () => {

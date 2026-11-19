@@ -284,6 +284,9 @@ export function TelaDiagnostico() {
         <a href="#armazenamento-lab" class="diag-link">
           Abrir Laboratório de Armazenamento (#armazenamento-lab) →
         </a>
+        <a href="#compartilhar-lab" class="diag-link">
+          Abrir Laboratório de Compartilhamento (#compartilhar-lab) →
+        </a>
       </footer>
     </main>
   );

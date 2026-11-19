@@ -78,7 +78,12 @@ export const STRINGS = {
   exportarCsv: 'Exportar CSV',
   exportarXlsx: 'Exportar XLSX',
   compartilhar: 'Compartilhar arquivo',
+  compartilharTexto: 'Compartilhar como texto',
   copiarTexto: 'Copiar como texto',
+  erroCompartilharAmigavel:
+    'Não foi possível compartilhar este arquivo. Use o download e envie pelo app Arquivos do aparelho, ou use Copiar como texto.',
+  detalheTecnicoCompartilhar:
+    'Detalhe técnico: {nome} — {mensagem} (variante {n})',
   semSessoes: 'Nenhuma sessão concluída para exportar.',
   arquivoGerado:
     'Arquivo gerado: {nome}. Confira a pasta Downloads do aparelho.',
