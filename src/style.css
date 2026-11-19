@@ -441,4 +441,202 @@ body {
   font-weight: 700;
 }
 
+/* Transição suave entre telas (~350 ms; respeita prefers-reduced-motion via tokens.css) */
+@keyframes telaFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-screen-transition {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: telaFadeIn var(--transicao) both;
+}
+
+.tela-fluxo {
+  width: 100%;
+  max-width: 900px;
+}
+
+/* Tela 1 — TelaTcle */
+.tela-tcle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  text-align: left;
+  padding-bottom: var(--space-md);
+}
+
+.tela-tcle__top-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.tela-tcle__audio-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.tela-tcle__audio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--amber);
+}
+
+.tela-tcle__audio-dot--pronto {
+  background-color: var(--ok);
+}
+
+.tela-tcle__audio-dot--falha {
+  background-color: var(--danger);
+}
+
+.tela-tcle__viewer {
+  flex: 1 1 auto;
+}
+
+.tela-tcle__footer {
+  background-color: var(--surface);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  box-shadow: var(--shadow-wine);
+}
+
+.tela-tcle__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin-top: var(--space-2xs);
+}
+
+@media (max-width: 560px) {
+  .tela-tcle__actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tela de Recusa */
+.tela-recusa {
+  min-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: var(--space-xl);
+}
+
+.tela-recusa__card {
+  max-width: 620px;
+  background-color: var(--surface);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl) var(--space-xl);
+  box-shadow: var(--shadow-wine);
+  text-align: center;
+}
+
+.tela-recusa__title {
+  margin: 0 0 var(--space-md) 0;
+  font-size: var(--font-size-xl);
+  color: var(--amber-soft);
+  line-height: var(--line-height-heading);
+}
+
+.tela-recusa__message {
+  margin: 0;
+  font-size: var(--font-size-md);
+  color: var(--text);
+  line-height: var(--line-height-base);
+}
+
+.tela-recusa__back-btn {
+  position: fixed;
+  bottom: var(--space-md);
+  right: var(--space-md);
+  min-height: var(--tap-min);
+  padding: 0.65rem 1.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  background-color: rgba(31, 7, 11, 0.55);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-md);
+  opacity: 0.72;
+  cursor: pointer;
+  transition: opacity var(--transicao), border-color var(--transicao);
+}
+
+.tela-recusa__back-btn:active,
+.tela-recusa__back-btn:focus-visible {
+  opacity: 1;
+  border-color: var(--amber);
+  outline: none;
+}
+
+/* Tela 2 — TelaBoasVindas */
+.tela-boas-vindas {
+  min-height: 84vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(90, 15, 30, 0.42) 0%,
+    rgba(31, 7, 11, 0.75) 52%,
+    rgba(13, 2, 4, 0.95) 100%
+  );
+}
+
+.tela-boas-vindas__content {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xl);
+  text-align: center;
+}
+
+.tela-boas-vindas__frase {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--text);
+  line-height: var(--line-height-heading);
+}
+
+.tela-boas-vindas__action {
+  min-width: 260px;
+}
+
+.tela-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 75vh;
+}
+
+
 

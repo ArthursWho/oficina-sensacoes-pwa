@@ -412,8 +412,8 @@ export function AudioLab() {
           </p>
         </div>
         <div class="demo-row">
-          <a href="#" class="demo-back-link">
-            ← Diagnóstico (Etapa 1)
+          <a href="#diagnostico" class="demo-back-link">
+            ← Diagnóstico (#diagnostico)
           </a>
           <a href="#componentes" class="demo-back-link">
             Galeria (#componentes)

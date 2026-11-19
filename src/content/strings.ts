@@ -23,6 +23,18 @@ export const STRINGS = {
     'Autorizo o registro e o uso de minha imagem nas condições acima',
   consentimentoImagemNao: 'Não autorizo o registro de minha imagem',
 
+  blocoImagemTitulo: 'Registro de imagem (opcional)',
+  audioPreparando: 'Preparando áudio…',
+  audioPronto: 'Áudio pronto',
+  audioFalha: 'Áudio com falha',
+  voltarAoInicio: 'Voltar ao início',
+  erroAudio:
+    'Não foi possível ativar o som neste aparelho. Chame o condutor da atividade e tente novamente.',
+  erroPreload:
+    'Alguns áudios não foram carregados. Chame o condutor da atividade.',
+  botaoTentarNovamente: 'Tentar novamente',
+  botaoOk: 'Ok',
+
   campoNome: {
     rotulo: 'Nome do participante',
     nota: 'Usado apenas para formalizar o termo. Não é salvo.',

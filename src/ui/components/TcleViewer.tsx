@@ -6,6 +6,7 @@ export interface TcleViewerProps {
   documento?: DocumentoTcle;
   maxHeight?: string;
   destacarPendencias?: boolean;
+  onChegouAoFim?: () => void;
 }
 
 // Renderiza um texto destacando trechos entre colchetes [...] quando em modo DEV
@@ -34,9 +35,10 @@ export function TcleViewer({
   documento = TCLE_DOCUMENTO,
   maxHeight = '440px',
   destacarPendencias = import.meta.env.DEV,
+  onChegouAoFim,
 }: TcleViewerProps) {
   return (
-    <ScrollArea maxHeight={maxHeight}>
+    <ScrollArea maxHeight={maxHeight} onChegouAoFim={onChegouAoFim}>
       <article class="ui-tcle">
         <header class="ui-tcle__header">
           <h2 class="ui-tcle__title">{documento.titulo}</h2>

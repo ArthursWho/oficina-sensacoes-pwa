@@ -12,6 +12,9 @@ export const NIVEL_MUSICA = 0.9;
 // Duração padrão dos fades de entrada e saída dos batimentos em milissegundos
 export const FADE_BATIMENTOS_MS = 500;
 
+// Duração do fade-in inicial dos batimentos ao aceitar o TCLE (em milissegundos)
+export const FADE_IN_INICIAL_MS = 1000;
+
 // Se true, usa loopStart/loopEnd descartando o silêncio inicial e final do buffer de batimentos
 export const LOOP_BATIMENTOS_APARADO = true;
 

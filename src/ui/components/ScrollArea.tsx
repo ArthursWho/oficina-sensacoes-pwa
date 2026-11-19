@@ -4,21 +4,30 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 export interface ScrollAreaProps {
   children: ComponentChildren;
   maxHeight?: string;
+  onChegouAoFim?: () => void;
 }
 
 // Área de rolagem estilizada em tons vinho/âmbar com indicação sutil de conteúdo abaixo
 export function ScrollArea({
   children,
   maxHeight = '420px',
+  onChegouAoFim,
 }: ScrollAreaProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasMoreBelow, setHasMoreBelow] = useState<boolean>(true);
+  const notificouFimRef = useRef<boolean>(false);
 
   const checkScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
     const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setHasMoreBelow(distanceToBottom > 12);
+    const restamMais = distanceToBottom > 12;
+    setHasMoreBelow(restamMais);
+
+    if (!restamMais && !notificouFimRef.current) {
+      notificouFimRef.current = true;
+      onChegouAoFim?.();
+    }
   };
 
   useEffect(() => {

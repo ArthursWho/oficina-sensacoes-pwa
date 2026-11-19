@@ -169,8 +169,8 @@ export function SessaoLab() {
           </p>
         </div>
         <div class="demo-row">
-          <a href="#" class="demo-back-link">
-            ← Diagnóstico
+          <a href="#diagnostico" class="demo-back-link">
+            ← Diagnóstico (#diagnostico)
           </a>
           <a href="#componentes" class="demo-back-link">
             #componentes

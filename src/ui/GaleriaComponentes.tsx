@@ -45,8 +45,8 @@ export function GaleriaComponentes() {
             Conteúdo & Design System ("O Mundo a Partir do Útero")
           </p>
         </div>
-        <a href="#" class="demo-back-link">
-          ← Voltar ao Diagnóstico (Etapa 1)
+        <a href="#diagnostico" class="demo-back-link">
+          ← Voltar ao Diagnóstico (#diagnostico)
         </a>
       </header>
 
