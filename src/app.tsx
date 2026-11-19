@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { AudioLab } from './audio/AudioLab';
 import { BATIMENTOS_SRC } from './content/tracks';
 import { GaleriaComponentes } from './ui/GaleriaComponentes';
+import { SessaoLab } from './ui/SessaoLab';
 
 type DisplayMode = 'fullscreen' | 'standalone' | 'browser';
 
@@ -131,12 +132,15 @@ export function App() {
     };
   }, []);
 
-  // Rotas simples por hash: #componentes (Etapa 2) e #audio-lab (Etapa 3)
+  // Rotas simples por hash: #componentes (Etapa 2), #audio-lab (Etapa 3) e #sessao-lab (Etapa 4)
   if (hash === '#componentes') {
     return <GaleriaComponentes />;
   }
   if (hash === '#audio-lab') {
     return <AudioLab />;
+  }
+  if (hash === '#sessao-lab') {
+    return <SessaoLab />;
   }
 
   // f) Teste de cache do áudio apontando para ./audio/batimentos.mp3
@@ -301,6 +305,9 @@ export function App() {
         </a>
         <a href="#audio-lab" class="diag-link">
           Abrir Laboratório de Áudio (#audio-lab) →
+        </a>
+        <a href="#sessao-lab" class="diag-link">
+          Abrir Laboratório da Sessão (#sessao-lab) →
         </a>
       </footer>
     </main>

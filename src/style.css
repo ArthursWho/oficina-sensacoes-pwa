@@ -403,3 +403,42 @@ body {
   -webkit-user-select: text;
 }
 
+/* Estilos do Laboratório da Sessão (#sessao-lab) */
+.sessao-lab-banner {
+  background-color: rgba(232, 168, 90, 0.14);
+  border: 2px solid var(--amber);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  color: var(--amber-soft);
+  font-size: var(--font-size-sm);
+}
+
+.sessao-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-sm);
+}
+
+.sessao-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  background-color: #120305;
+}
+
+.sessao-table th,
+.sessao-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--surface-alt);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sessao-table th {
+  background-color: var(--surface-alt);
+  color: var(--amber-soft);
+  font-weight: 700;
+}
+
+

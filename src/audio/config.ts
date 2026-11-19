@@ -13,7 +13,7 @@ export const NIVEL_MUSICA = 0.9;
 export const FADE_BATIMENTOS_MS = 500;
 
 // Se true, usa loopStart/loopEnd descartando o silêncio inicial e final do buffer de batimentos
-export const LOOP_BATIMENTOS_APARADO = false;
+export const LOOP_BATIMENTOS_APARADO = true;
 
 // Limiar em decibéis (dBFS) abaixo do qual as amostras de borda são consideradas silêncio
 export const LIMIAR_SILENCIO_DB = -60;
