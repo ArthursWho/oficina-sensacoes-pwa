@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
+import { AudioLab } from './audio/AudioLab';
 import { BATIMENTOS_SRC } from './content/tracks';
 import { GaleriaComponentes } from './ui/GaleriaComponentes';
 
@@ -130,9 +131,12 @@ export function App() {
     };
   }, []);
 
-  // Rota simples por hash: #componentes exibe a galeria da Etapa 2
+  // Rotas simples por hash: #componentes (Etapa 2) e #audio-lab (Etapa 3)
   if (hash === '#componentes') {
     return <GaleriaComponentes />;
+  }
+  if (hash === '#audio-lab') {
+    return <AudioLab />;
   }
 
   // f) Teste de cache do áudio apontando para ./audio/batimentos.mp3
@@ -294,6 +298,9 @@ export function App() {
         </span>
         <a href="#componentes" class="diag-link">
           Abrir Galeria de Componentes (#componentes) →
+        </a>
+        <a href="#audio-lab" class="diag-link">
+          Abrir Laboratório de Áudio (#audio-lab) →
         </a>
       </footer>
     </main>
