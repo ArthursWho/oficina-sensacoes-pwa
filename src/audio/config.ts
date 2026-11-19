@@ -20,3 +20,33 @@ export const LOOP_BATIMENTOS_APARADO = true;
 
 // Limiar em decibéis (dBFS) abaixo do qual as amostras de borda são consideradas silêncio
 export const LIMIAR_SILENCIO_DB = -60;
+
+// Nível relativo dos efeitos sonoros sutis de interface em relação ao volume mestre
+export const NIVEL_EFEITOS_UI = 0.12;
+
+export interface DescritorTomUi {
+  frequenciasHz: number[];
+  duracaoMs: number;
+  ataqueMs: number;
+  decaimentoMs: number;
+  nivel: number;
+}
+
+// Som grave/médio suave de confirmação ("Aceito participar" e "Iniciar" na Tela 2) — <= 180 ms
+export const SOM_CONFIRMAR: DescritorTomUi = {
+  frequenciasHz: [220, 330],
+  duracaoMs: 160,
+  ataqueMs: 25,
+  decaimentoMs: 135,
+  nivel: NIVEL_EFEITOS_UI,
+};
+
+// Som grave/médio suave quando uma pergunta é liberada na Tela 3 — <= 180 ms
+export const SOM_LIBERADO: DescritorTomUi = {
+  frequenciasHz: [261.63, 392.0],
+  duracaoMs: 150,
+  ataqueMs: 20,
+  decaimentoMs: 130,
+  nivel: NIVEL_EFEITOS_UI,
+};
+

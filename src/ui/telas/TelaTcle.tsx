@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { audioEngine } from '../../audio/AudioEngine';
+import { tocarEfeito } from '../../audio/efeitosUi';
 import {
   assinarPreparoAudio,
   EstadoPreparoAudio,
@@ -158,6 +159,7 @@ export function TelaTcle() {
         const n = await proximoNumeroParticipante();
         setNome('');
         sessionStore.dispatch(montarEventoAceitar(n, autorizaImagem));
+        tocarEfeito('confirmar');
       } catch {
         mostrarErro('armazenamento');
         setProcessando(false);

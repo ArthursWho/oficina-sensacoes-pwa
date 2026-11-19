@@ -5,11 +5,16 @@ import {
   ErroArmazenamento,
   NOME_DB_PADRAO,
   obterVersaoApp,
+  RegistroPreferenciasDb,
   RegistroSessaoDb,
   RegistroUltimaExportacao,
   STORE_META,
   STORE_SESSOES,
 } from './db';
+
+export interface PreferenciasOperador {
+  efeitosUi: boolean;
+}
 
 export interface RepositorioSessoes {
   salvarSessao(s: SessaoConcluida): Promise<void>;
@@ -20,6 +25,8 @@ export interface RepositorioSessoes {
   registrarExportacao(ids: string[], agora: Date): Promise<void>;
   obterUltimaExportacao(): Promise<RegistroUltimaExportacao | null>;
   contarNaoExportadas(): Promise<number>;
+  obterPreferencias(): Promise<PreferenciasOperador>;
+  salvarPreferencias(p: PreferenciasOperador): Promise<void>;
 }
 
 // Extrai o sufixo numérico de "Participante_NN" (ex.: "Participante_10" -> 10)
@@ -239,7 +246,7 @@ export function criarRepositorio(
       const db = await abrirBanco(nomeDb);
       try {
         const reg = await db.get(STORE_META, 'ultimaExportacao');
-        if (!reg) return null;
+        if (!reg || reg.chave !== 'ultimaExportacao') return null;
         return {
           chave: 'ultimaExportacao',
           em: reg.em,
@@ -258,7 +265,11 @@ export function criarRepositorio(
           db.get(STORE_META, 'ultimaExportacao'),
         ]);
 
-        if (!ultima || !Array.isArray(ultima.ids)) {
+        if (
+          !ultima ||
+          ultima.chave !== 'ultimaExportacao' ||
+          !Array.isArray(ultima.ids)
+        ) {
           return chavesSessoes.length;
         }
 
@@ -270,6 +281,33 @@ export function criarRepositorio(
           }
         }
         return naoExportadas;
+      } finally {
+        db.close();
+      }
+    },
+
+    async obterPreferencias(): Promise<PreferenciasOperador> {
+      const db = await abrirBanco(nomeDb);
+      try {
+        const reg = await db.get(STORE_META, 'preferencias');
+        if (!reg || reg.chave !== 'preferencias') {
+          return { efeitosUi: true };
+        }
+        return { efeitosUi: Boolean(reg.efeitosUi) };
+      } finally {
+        db.close();
+      }
+    },
+
+    async salvarPreferencias(p: PreferenciasOperador): Promise<void> {
+      const db = await abrirBanco(nomeDb);
+      try {
+        const registro: RegistroPreferenciasDb = {
+          chave: 'preferencias',
+          efeitosUi: Boolean(p.efeitosUi),
+        };
+        const tx = db.transaction(STORE_META, 'readwrite');
+        await Promise.all([tx.store.put(registro), tx.done]);
       } finally {
         db.close();
       }

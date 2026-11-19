@@ -14,6 +14,8 @@ export function TelaEncerramento({ estado }: { estado: Estado }) {
 
   return (
     <main class="tela-fluxo tela-encerramento">
+      <VisualOrganico intensidade="calmo" par={6} />
+
       {/* Indicador discreto do operador no canto superior direito: aparece apenas quando status === "salvo" */}
       <header class="tela-encerramento__top">
         {visao.status === 'salvo' && (
@@ -27,10 +29,8 @@ export function TelaEncerramento({ estado }: { estado: Estado }) {
         )}
       </header>
 
-      {/* Centro: VisualOrganico calmo + mensagem acolhedora de agradecimento com fade-in ~500 ms */}
+      {/* Centro: mensagem acolhedora de agradecimento com fade-in ~500 ms */}
       <section class="tela-encerramento__centro">
-        <VisualOrganico intensidade="calmo" />
-
         <div class="tela-encerramento__card">
           <h1 class="tela-encerramento__title">{STRINGS.encerramento.titulo}</h1>
           <p class="tela-encerramento__message">

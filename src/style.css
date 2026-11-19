@@ -16,6 +16,7 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 16px;
+  overflow-x: hidden;
   overscroll-behavior: none;
   user-select: none;
   -webkit-user-select: none;
@@ -29,7 +30,10 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: calc(0.85rem + var(--safe-top))
+    calc(1rem + var(--safe-right))
+    calc(1rem + var(--safe-bottom))
+    calc(1rem + var(--safe-left));
   text-align: center;
 }
 
@@ -483,6 +487,8 @@ body {
   align-items: center;
   gap: var(--space-md);
   flex-wrap: wrap;
+  padding-left: calc(var(--tap-min) + 0.5rem);
+  min-height: 2.25rem;
 }
 
 .tela-tcle__audio-badge {
@@ -598,21 +604,19 @@ body {
 
 /* Tela 2 — TelaBoasVindas */
 .tela-boas-vindas {
-  min-height: 84vh;
+  position: relative;
+  min-height: 82vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-xl);
   border-radius: var(--radius-lg);
-  background: radial-gradient(
-    circle at 50% 45%,
-    rgba(90, 15, 30, 0.42) 0%,
-    rgba(31, 7, 11, 0.75) 52%,
-    rgba(13, 2, 4, 0.95) 100%
-  );
+  overflow: hidden;
 }
 
 .tela-boas-vindas__content {
+  position: relative;
+  z-index: 2;
   max-width: 680px;
   display: flex;
   flex-direction: column;
@@ -630,7 +634,7 @@ body {
 }
 
 .tela-boas-vindas__action {
-  min-width: 260px;
+  min-width: min(260px, 100%);
 }
 
 .tela-placeholder {
@@ -640,42 +644,132 @@ body {
   min-height: 75vh;
 }
 
-/* VisualOrganico (CSS puro, leve para tablet; Etapa 9 refinará) */
-@keyframes respiracaoOrganica {
+/* VisualOrganico v2 (container fullscreen atrás do conteúdo, 3 formas líquidas, núcleo lub-dub e partículas) */
+@keyframes formaLiquida1 {
   0%,
   100% {
-    transform: scale(0.94);
-    border-radius: 46% 54% 52% 48% / 48% 45% 55% 52%;
+    transform: scale(0.95) rotate(0deg);
+    border-radius: 44% 56% 52% 48% / 48% 43% 57% 52%;
+  }
+  33% {
+    transform: scale(1.04) rotate(5deg);
+    border-radius: 55% 45% 44% 56% / 53% 56% 44% 47%;
+  }
+  66% {
+    transform: scale(0.98) rotate(-4deg);
+    border-radius: 48% 52% 57% 43% / 44% 51% 49% 56%;
+  }
+}
+
+@keyframes formaLiquida2 {
+  0%,
+  100% {
+    transform: scale(1.02) rotate(0deg);
+    border-radius: 52% 48% 45% 55% / 54% 46% 54% 46%;
   }
   50% {
-    transform: scale(1.07);
-    border-radius: 53% 47% 46% 54% / 54% 52% 48% 46%;
+    transform: scale(0.93) rotate(-6deg);
+    border-radius: 43% 57% 54% 46% / 45% 55% 45% 55%;
+  }
+}
+
+@keyframes formaLiquida3 {
+  0%,
+  100% {
+    transform: scale(0.96);
+    border-radius: 50% 50% 44% 56% / 46% 54% 46% 54%;
+  }
+  50% {
+    transform: scale(1.06);
+    border-radius: 45% 55% 55% 45% / 55% 45% 55% 45%;
+  }
+}
+
+/* Duplo pulso sutil "lub-dub" (~1,6 s no modo ativo) */
+@keyframes pulsoLubDub {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.72;
+  }
+  18% {
+    transform: scale(1.08);
+    opacity: 0.98;
+  }
+  30% {
+    transform: scale(0.97);
+    opacity: 0.82;
+  }
+  44% {
+    transform: scale(1.04);
+    opacity: 0.92;
+  }
+  70% {
+    transform: scale(0.93);
+    opacity: 0.75;
+  }
+}
+
+@keyframes derivaParticula {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.9);
+    opacity: 0.08;
+  }
+  50% {
+    transform: translate3d(var(--p-dx, 14px), var(--p-dy, -20px), 0) scale(1.15);
+    opacity: var(--p-op, 0.28);
   }
 }
 
 .ui-visual-organico {
-  position: relative;
-  width: 240px;
-  height: 240px;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  contain: layout paint style;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity var(--fade-duracao) ease, transform var(--fade-duracao) ease;
-  will-change: transform, opacity;
+  transition: opacity var(--fade-duracao) ease;
+  will-change: opacity;
 }
 
 .ui-visual-organico--ativo {
-  opacity: 0.95;
+  opacity: 0.96;
 }
 
 .ui-visual-organico--calmo {
-  opacity: 0.38;
-  transform: scale(0.9);
+  opacity: 0.48;
 }
 
 .ui-visual-organico--apagado {
-  opacity: 0.05;
-  transform: scale(0.82);
+  opacity: 0.04;
+}
+
+.ui-visual-organico__vinheta {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(13, 2, 4, 0) 38%,
+    rgba(13, 2, 4, 0.65) 78%,
+    rgba(13, 2, 4, 0.95) 100%
+  );
+  z-index: 2;
+}
+
+.ui-visual-organico__palco {
+  position: relative;
+  width: min(74vmin, 520px);
+  height: min(74vmin, 520px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(var(--vo-escala-nucleo, 1));
+  transition: transform var(--fade-duracao) ease;
+  z-index: 1;
 }
 
 .ui-visual-organico__camada {
@@ -689,89 +783,114 @@ body {
   height: 100%;
   background: radial-gradient(
     circle,
-    rgba(139, 26, 43, 0.32) 0%,
-    rgba(90, 15, 30, 0.14) 58%,
+    rgba(139, 26, 43, var(--vo-opacidade-vinho, 0.34)) 0%,
+    rgba(90, 15, 30, 0.18) 58%,
     rgba(13, 2, 4, 0) 78%
   );
-  animation: respiracaoOrganica 1.6s ease-in-out infinite;
+  animation: formaLiquida1 20s ease-in-out infinite;
 }
 
 .ui-visual-organico__camada--media {
-  width: 68%;
-  height: 68%;
+  width: 74%;
+  height: 74%;
   background: radial-gradient(
     circle,
-    rgba(232, 168, 90, 0.25) 0%,
-    rgba(139, 26, 43, 0.24) 60%,
-    rgba(13, 2, 4, 0) 80%
+    rgba(232, 168, 90, var(--vo-opacidade-ambar, 0.26)) 0%,
+    rgba(139, 26, 43, 0.25) 60%,
+    rgba(13, 2, 4, 0) 82%
   );
-  animation: respiracaoOrganica 1.6s ease-in-out infinite -0.4s;
+  animation: formaLiquida2 16s ease-in-out infinite -4s;
+}
+
+.ui-visual-organico__camada--interna {
+  width: 54%;
+  height: 54%;
+  background: radial-gradient(
+    circle,
+    rgba(242, 200, 143, var(--vo-opacidade-ambar, 0.28)) 0%,
+    rgba(139, 26, 43, 0.2) 65%,
+    rgba(13, 2, 4, 0) 85%
+  );
+  animation: formaLiquida3 14s ease-in-out infinite -7s;
 }
 
 .ui-visual-organico__camada--nucleo {
-  width: 36%;
-  height: 36%;
+  width: 34%;
+  height: 34%;
   background: radial-gradient(
     circle,
-    rgba(242, 200, 143, 0.42) 0%,
-    rgba(232, 168, 90, 0.16) 72%,
+    rgba(242, 200, 143, 0.45) 0%,
+    rgba(232, 168, 90, 0.18) 70%,
     rgba(13, 2, 4, 0) 100%
   );
-  animation: respiracaoOrganica 1.6s ease-in-out infinite -0.8s;
+  animation: pulsoLubDub 1.6s ease-in-out infinite;
 }
 
-.ui-visual-organico--calmo .ui-visual-organico__camada--externa,
-.ui-visual-organico--calmo .ui-visual-organico__camada--media,
 .ui-visual-organico--calmo .ui-visual-organico__camada--nucleo {
-  animation-duration: 4.5s;
+  animation-duration: 4.6s;
 }
 
-.ui-visual-organico--apagado .ui-visual-organico__camada--externa,
-.ui-visual-organico--apagado .ui-visual-organico__camada--media,
-.ui-visual-organico--apagado .ui-visual-organico__camada--nucleo {
-  animation-play-state: paused;
+.ui-visual-organico__particulas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.ui-visual-organico__particula {
+  position: absolute;
+  border-radius: 50%;
+  background-color: var(--amber-soft);
+  opacity: 0.15;
+  will-change: transform, opacity;
+  animation-name: derivaParticula;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.ui-visual-organico--apagado .ui-visual-organico__camada,
+.ui-visual-organico--apagado .ui-visual-organico__particula,
+.ui-visual-organico--pausado .ui-visual-organico__camada,
+.ui-visual-organico--pausado .ui-visual-organico__particula {
+  animation-play-state: paused !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-visual-organico__camada {
+  .ui-visual-organico__camada,
+  .ui-visual-organico__particula {
     animation: none !important;
   }
 }
 
 /* Tela 3 — TelaCiclo */
 .tela-ciclo {
-  min-height: 88vh;
+  position: relative;
+  min-height: 86vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: var(--space-lg);
-  padding: var(--space-md) var(--space-lg);
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
 }
 
 .tela-ciclo__top {
+  position: relative;
+  z-index: 2;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-}
-
-.tela-ciclo__progresso-touch {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--tap-min);
+  padding-left: calc(var(--tap-min) + 0.5rem);
   min-height: var(--tap-min);
-  padding: 0.25rem;
-  opacity: 0.72;
-  cursor: pointer;
 }
 
 .tela-ciclo__centro {
+  position: relative;
+  z-index: 2;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-lg);
+  gap: var(--space-md);
   text-align: center;
 }
 
@@ -811,7 +930,9 @@ body {
 }
 
 .tela-ciclo__controles {
-  min-height: 220px;
+  position: relative;
+  z-index: 2;
+  min-height: 180px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -860,6 +981,7 @@ body {
 
 /* Tela 4 Real — TelaEncerramento */
 .tela-encerramento {
+  position: relative;
   min-height: 86vh;
   display: flex;
   flex-direction: column;
@@ -868,10 +990,13 @@ body {
 }
 
 .tela-encerramento__top {
+  position: relative;
+  z-index: 2;
   min-height: 28px;
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  padding-left: calc(var(--tap-min) + 0.5rem);
 }
 
 .tela-encerramento__saved-badge {
@@ -884,6 +1009,8 @@ body {
 }
 
 .tela-encerramento__centro {
+  position: relative;
+  z-index: 2;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -918,6 +1045,8 @@ body {
 }
 
 .tela-encerramento__footer {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -943,11 +1072,11 @@ body {
   opacity: 0.65;
 }
 
-/* Menu do Operador e Botão Global de Engrenagem (Etapa 8) */
+/* Menu do Operador e Botão Global de Engrenagem (Etapa 8/9) */
 .ui-operator-gear-btn {
   position: fixed;
-  top: 0.65rem;
-  left: 0.65rem;
+  top: calc(0.5rem + var(--safe-top));
+  left: calc(0.5rem + var(--safe-left));
   width: var(--tap-min);
   height: var(--tap-min);
   display: inline-flex;
@@ -1065,6 +1194,55 @@ body {
   color: var(--text-muted);
   opacity: 0.85;
 }
+
+/* Ajustes responsivos para celular retrato (412x915) e celular paisagem (915x412) */
+@media (max-height: 520px) {
+  .tela-tcle__viewer .ui-scrollarea {
+    max-height: 36vh !important;
+  }
+
+  .tela-boas-vindas,
+  .tela-ciclo,
+  .tela-encerramento,
+  .tela-recusa {
+    min-height: 76vh;
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .tela-ciclo__controles {
+    min-height: auto;
+  }
+
+  .tela-ciclo__bloco-pergunta {
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .tela-ciclo__replay {
+    margin-top: var(--space-xs);
+    padding-top: var(--space-2xs);
+  }
+
+  .tela-encerramento__card,
+  .tela-recusa__card {
+    padding: var(--space-md) var(--space-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .ui-modal {
+    padding: var(--space-md);
+  }
+
+  .ui-modal__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .tela-ciclo__bloco-pergunta {
+    padding: var(--space-md);
+  }
+}
+
 
 
 

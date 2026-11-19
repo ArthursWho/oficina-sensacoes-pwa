@@ -1,7 +1,9 @@
 import { useState } from 'preact/hooks';
+import { tocarEfeito } from '../../audio/efeitosUi';
 import { STRINGS } from '../../content/strings';
 import { sessionStore } from '../../session/store';
 import { Button } from '../components/Button';
+import { VisualOrganico } from '../components/VisualOrganico';
 
 // Ícone SVG de Play para o botão "Iniciar"
 function IconePlay() {
@@ -18,18 +20,20 @@ function IconePlay() {
   );
 }
 
-// Tela 2 — Boas-vindas (batimentos seguem tocando ao fundo)
+// Tela 2 — Boas-vindas (batimentos seguem tocando ao fundo; VisualOrganico em intensidade "calmo")
 export function TelaBoasVindas() {
   const [iniciando, setIniciando] = useState<boolean>(false);
 
   const handleIniciar = () => {
     if (iniciando) return;
     setIniciando(true);
+    tocarEfeito('confirmar');
     sessionStore.dispatch({ tipo: 'INICIAR' });
   };
 
   return (
     <main class="tela-fluxo tela-boas-vindas">
+      <VisualOrganico intensidade="calmo" par={1} />
       <div class="tela-boas-vindas__content">
         <h1 class="tela-boas-vindas__frase">{STRINGS.tela2Frase}</h1>
         <div class="tela-boas-vindas__action">

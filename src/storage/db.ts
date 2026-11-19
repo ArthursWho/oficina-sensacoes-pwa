@@ -40,7 +40,13 @@ export interface RegistroUltimaExportacao {
   ids: string[];
 }
 
-export type RegistroMetaDb = RegistroUltimaExportacao;
+// Registro de preferências do operador no object store "meta" (v2)
+export interface RegistroPreferenciasDb {
+  chave: 'preferencias';
+  efeitosUi: boolean;
+}
+
+export type RegistroMetaDb = RegistroUltimaExportacao | RegistroPreferenciasDb;
 
 export interface EsquemaMundoUteroDb extends DBSchema {
   sessoes: {

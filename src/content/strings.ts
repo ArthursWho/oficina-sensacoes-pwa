@@ -97,4 +97,14 @@ export const STRINGS = {
   confirmarAtualizar: 'Atualizar agora? O aplicativo será reiniciado.',
   semAtualizacao: 'Aplicativo atualizado',
   armazenamentoProtegido: 'Armazenamento protegido',
+
+  telaSempreLigada: 'Tela sempre ligada',
+  wakeAtiva: 'ativa',
+  wakeIndisponivel: 'indisponível neste aparelho',
+  wakeNegada: 'não permitida',
+
+  sonsInterface: 'Sons da interface',
+  ligado: 'Ligado',
+  desligado: 'Desligado',
+  sonsInterfaceAviso: 'Mantenha a mesma opção durante toda a coleta.',
 } as const;

@@ -14,25 +14,25 @@
   --danger: #d9534f;
   --ok: #7bc47f;
 
-  /* Tipografia (stack system-ui, base 20px para leitura confortável em tablet no escuro) */
+  /* Tipografia responsiva (stack system-ui, fluida com clamp() entre celular e tablet) */
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-size-base: 1.25rem; /* 20px */
-  --font-size-sm: 1.05rem;   /* ~16.8px */
-  --font-size-md: 1.25rem;   /* 20px */
-  --font-size-lg: 1.5rem;    /* 24px */
-  --font-size-xl: 2rem;      /* 32px */
-  --font-size-2xl: 2.5rem;   /* 40px */
+  --font-size-base: clamp(1.05rem, 1rem + 0.35vw, 1.25rem); /* 16.8px -> 20px */
+  --font-size-sm: clamp(0.92rem, 0.88rem + 0.25vw, 1.05rem);
+  --font-size-md: clamp(1.05rem, 1rem + 0.35vw, 1.25rem);
+  --font-size-lg: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --font-size-xl: clamp(1.5rem, 1.3rem + 0.9vw, 2rem);
+  --font-size-2xl: clamp(1.75rem, 1.45rem + 1.3vw, 2.5rem);
   --line-height-base: 1.6;
   --line-height-heading: 1.25;
 
-  /* Espaçamentos */
+  /* Espaçamentos fluidos */
   --space-2xs: 0.375rem; /* 6px */
   --space-xs: 0.625rem;  /* 10px */
-  --space-sm: 0.875rem;  /* 14px */
-  --space-md: 1.25rem;   /* 20px */
-  --space-lg: 1.75rem;   /* 28px */
-  --space-xl: 2.5rem;    /* 40px */
-  --space-2xl: 3.5rem;   /* 56px */
+  --space-sm: clamp(0.65rem, 0.55rem + 0.4vw, 0.875rem);
+  --space-md: clamp(0.9rem, 0.75rem + 0.6vw, 1.25rem);
+  --space-lg: clamp(1.15rem, 0.95rem + 0.9vw, 1.75rem);
+  --space-xl: clamp(1.5rem, 1.2rem + 1.3vw, 2.5rem);
+  --space-2xl: clamp(2rem, 1.5rem + 2vw, 3.5rem);
 
   /* Raios arredondados grandes (visual orgânico / líquido) */
   --radius-sm: 14px;
@@ -45,12 +45,24 @@
   --shadow-amber: 0 0 18px rgba(232, 168, 90, 0.22);
   --focus-ring: 0 0 0 3px var(--bg), 0 0 0 6px var(--amber-soft);
 
-  /* Alvos de toque */
+  /* Alvos de toque (64px em tablet, 56px em celular via media query abaixo) */
   --tap-min: 64px;
+
+  /* Áreas seguras do dispositivo */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 
   /* Movimento */
   --fade-duracao: 500ms;
   --transicao: 350ms ease;
+}
+
+@media (max-width: 600px), (max-height: 500px) {
+  :root {
+    --tap-min: 56px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { houveLiberacao, tocarEfeito } from '../../audio/efeitosUi';
 import { STRINGS } from '../../content/strings';
 import { retomarAudioNoGesto } from '../../session/controlador';
 import { sessionStore } from '../../session/store';
 import { Estado, Resposta } from '../../session/tipos';
 import { formatarDataHora } from '../../session/utilidades';
-import { visaoCiclo } from '../../session/visao';
+import { visaoCiclo, VisaoCiclo } from '../../session/visao';
 import { Button } from '../components/Button';
 import { ProgressoPar } from '../components/ProgressoPar';
 import { VisualOrganico } from '../components/VisualOrganico';
@@ -17,6 +18,14 @@ export function TelaCiclo({ estado }: { estado: Estado }) {
   const [travaClique, setTravaClique] = useState<boolean>(false);
 
   const timerTravaRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visaoAnteriorRef = useRef<VisaoCiclo | null>(null);
+
+  useEffect(() => {
+    if (houveLiberacao(visaoAnteriorRef.current, visao)) {
+      tocarEfeito('liberado');
+    }
+    visaoAnteriorRef.current = visao;
+  }, [visao]);
 
   useEffect(() => {
     return () => {
@@ -66,15 +75,16 @@ export function TelaCiclo({ estado }: { estado: Estado }) {
 
   return (
     <main class="tela-fluxo tela-ciclo">
+      {/* VisualOrganico v2 em tela cheia atrás do conteúdo com tonalidade do par atual */}
+      <VisualOrganico intensidade={visao.visual} par={estado.par} />
+
       {/* Canto superior direito: ProgressoPar discreto */}
       <header class="tela-ciclo__top">
         <ProgressoPar atual={estado.par} total={6} />
       </header>
 
-      {/* Centro: VisualOrganico sempre presente + revelação de título/artista quando liberado */}
+      {/* Centro: revelação de título/artista quando liberado */}
       <section class="tela-ciclo__centro">
-        <VisualOrganico intensidade={visao.visual} />
-
         {visao.mostrarMusica && visao.titulo && (
           <div class="tela-ciclo__musica" aria-live="polite">
             <h1 class="tela-ciclo__musica-titulo">{visao.titulo}</h1>

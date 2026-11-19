@@ -1,4 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
+import {
+  assinarPreferenciaEfeitosUi,
+  definirPreferenciaEfeitosUi,
+  obterPreferenciaEfeitosUi,
+} from '../../audio/efeitosUi';
 import { STRINGS } from '../../content/strings';
 import {
   baixarArquivo,
@@ -16,6 +21,11 @@ import { gerarXlsx } from '../../export/xlsx';
 import { sessionStore } from '../../session/store';
 import { Estado } from '../../session/tipos';
 import { obterVersaoApp } from '../../storage/db';
+import {
+  assinarWakeLockGlobal,
+  EstadoWakeLock,
+  obterEstadoWakeLockGlobal,
+} from '../../plataforma/wakeLock';
 import {
   estadoArmazenamento,
   EstadoArmazenamentoDispositivo,
@@ -75,27 +85,53 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     useState<boolean>(false);
   const [msgCopia, setMsgCopia] = useState<string>('');
 
-  // Estado de atualização do PWA
+  // Estado de atualização do PWA, Wake Lock e Sons da interface
   const [atualizacaoPendente, setAtualizacaoPendente] = useState<boolean>(() =>
     temAtualizacaoDisponivel()
   );
+  const [wakeLockState, setWakeLockState] = useState<EstadoWakeLock>(() =>
+    obterEstadoWakeLockGlobal()
+  );
+  const [sonsUiAtivos, setSonsUiAtivos] = useState<boolean>(() =>
+    obterPreferenciaEfeitosUi()
+  );
 
   useEffect(() => {
-    return assinarAtualizacaoPwa(setAtualizacaoPendente);
+    const u1 = assinarAtualizacaoPwa(setAtualizacaoPendente);
+    const u2 = assinarWakeLockGlobal(setWakeLockState);
+    const u3 = assinarPreferenciaEfeitosUi(setSonsUiAtivos);
+    return () => {
+      u1();
+      u2();
+      u3();
+    };
   }, []);
 
   const carregarDadosMenu = async () => {
+    setWakeLockState(obterEstadoWakeLockGlobal());
     try {
-      const [total, pendentes, st] = await Promise.all([
+      const [total, pendentes, st, prefs] = await Promise.all([
         repositorio.contarSessoes(),
         repositorio.contarNaoExportadas(),
         estadoArmazenamento(),
+        repositorio.obterPreferencias(),
       ]);
       setTotalSessoes(total);
       setNaoExportadas(pendentes);
       setInfoStorage(st);
+      definirPreferenciaEfeitosUi(prefs.efeitosUi);
     } catch {
       // Mantém valores atuais se falhar leitura
+    }
+  };
+
+  const handleAlternarSonsUi = async () => {
+    const novoValor = !sonsUiAtivos;
+    definirPreferenciaEfeitosUi(novoValor);
+    try {
+      await repositorio.salvarPreferencias({ efeitosUi: novoValor });
+    } catch {
+      // Mantém preferência em memória mesmo se falhar gravação
     }
   };
 
@@ -287,6 +323,17 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     : infoStorage.persistido
     ? 'sim'
     : 'não';
+
+  const textoWakeLock =
+    wakeLockState.status === 'ativo'
+      ? STRINGS.wakeAtiva
+      : wakeLockState.status === 'indisponivel'
+      ? STRINGS.wakeIndisponivel
+      : wakeLockState.status === 'negado'
+      ? `${STRINGS.wakeNegada}${
+          wakeLockState.motivo ? ` (${wakeLockState.motivo})` : ''
+        }`
+      : 'inativa';
 
   const modoShare = ultimoGerado?.preparoShare.modo ?? 'indisponivel';
 
@@ -511,6 +558,26 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
                 <div class="diag-item">
                   <span class="diag-label">{STRINGS.armazenamentoProtegido}</span>
                   <strong>{textoArmazenamentoProtegido}</strong>
+                </div>
+                <div class="diag-item">
+                  <span class="diag-label">{STRINGS.telaSempreLigada}</span>
+                  <strong>
+                    {STRINGS.telaSempreLigada}: {textoWakeLock}
+                  </strong>
+                </div>
+                <div class="diag-item">
+                  <div>
+                    <span class="diag-label">{STRINGS.sonsInterface}</span>
+                    <span class="diag-detail">
+                      {STRINGS.sonsInterfaceAviso}
+                    </span>
+                  </div>
+                  <Button
+                    variant={sonsUiAtivos ? 'primary' : 'secondary'}
+                    onClick={handleAlternarSonsUi}
+                  >
+                    {sonsUiAtivos ? STRINGS.ligado : STRINGS.desligado}
+                  </Button>
                 </div>
                 <div class="diag-item">
                   <span class="diag-label">

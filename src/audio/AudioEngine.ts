@@ -1,4 +1,5 @@
 import {
+  DescritorTomUi,
   FADE_BATIMENTOS_MS,
   LIMIAR_SILENCIO_DB,
   LOOP_BATIMENTOS_APARADO,
@@ -613,6 +614,65 @@ export class AudioEngine {
       batimentosTocando: this.batimentosTocando,
       geracao: this.geracao,
     };
+  }
+
+  /**
+   * Sintetiza um tom curto de interface ("sine") através de um GainNode de efeitos próprio
+   * conectado ao gainMestre.
+   * Retorna false sem tocar nada se o contexto não estiver "running" ou se houver faixa musical soando.
+   * Nunca altera fontesMusicaAtivas e nunca lança exceção.
+   */
+  tocarTom(desc: DescritorTomUi): boolean {
+    try {
+      if (
+        !this.ctx ||
+        this.ctx.state !== 'running' ||
+        !this.gainMestre ||
+        this.fontesMusicaAtivas > 0
+      ) {
+        return false;
+      }
+
+      if (
+        !desc ||
+        !Array.isArray(desc.frequenciasHz) ||
+        desc.frequenciasHz.length === 0 ||
+        typeof this.ctx.createOscillator !== 'function'
+      ) {
+        return false;
+      }
+
+      const ctx = this.ctx;
+      const agora = ctx.currentTime;
+      const duracaoS = Math.max(0.01, desc.duracaoMs / 1000);
+      const ataqueS = Math.max(0.002, desc.ataqueMs / 1000);
+      const decaimentoS = Math.max(0.005, desc.decaimentoMs / 1000);
+      const fimS = agora + Math.max(duracaoS, ataqueS + decaimentoS);
+      const nivelPorOsc =
+        Math.max(0, Math.min(1, desc.nivel)) / desc.frequenciasHz.length;
+
+      const gainEfeito = ctx.createGain();
+      gainEfeito.gain.cancelScheduledValues(agora);
+      gainEfeito.gain.setValueAtTime(0, agora);
+      gainEfeito.gain.linearRampToValueAtTime(nivelPorOsc, agora + ataqueS);
+      gainEfeito.gain.linearRampToValueAtTime(0, fimS);
+      gainEfeito.connect(this.gainMestre);
+
+      for (const freq of desc.frequenciasHz) {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        if (osc.frequency && typeof osc.frequency.setValueAtTime === 'function') {
+          osc.frequency.setValueAtTime(freq, agora);
+        }
+        osc.connect(gainEfeito);
+        osc.start(agora);
+        osc.stop(fimS);
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // --- Métodos auxiliares para os controles de runtime do Laboratório (#audio-lab) ---

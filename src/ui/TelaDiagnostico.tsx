@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'preact/hooks';
+import { STRINGS } from '../content/strings';
 import { BATIMENTOS_SRC } from '../content/tracks';
+import {
+  assinarWakeLockGlobal,
+  EstadoWakeLock,
+  obterEstadoWakeLockGlobal,
+} from '../plataforma/wakeLock';
+import {
+  assinarDiagnosticoVisual,
+  DiagnosticoVisual,
+  obterDiagnosticoVisual,
+} from './components/VisualOrganico';
 
 type DisplayMode = 'fullscreen' | 'standalone' | 'browser';
 
@@ -28,6 +39,12 @@ export function TelaDiagnostico() {
   const [storagePersisted, setStoragePersisted] = useState<boolean | null>(null);
   const [storageDetail, setStorageDetail] = useState<string>('Verificando...');
   const [wakeLockAvailable] = useState<boolean>(() => 'wakeLock' in navigator);
+  const [wakeLockState, setWakeLockState] = useState<EstadoWakeLock>(() =>
+    obterEstadoWakeLockGlobal()
+  );
+  const [diagVisual, setDiagVisual] = useState<DiagnosticoVisual>(() =>
+    obterDiagnosticoVisual()
+  );
   const [audioTest, setAudioTest] = useState<AudioTestState>({
     status: 'IDLE',
     detail: 'Toque no botão abaixo para testar',
@@ -108,7 +125,12 @@ export function TelaDiagnostico() {
 
     checkStoragePersist();
 
+    const desassinarWake = assinarWakeLockGlobal(setWakeLockState);
+    const desassinarVisual = assinarDiagnosticoVisual(setDiagVisual);
+
     return () => {
+      desassinarWake();
+      desassinarVisual();
       window.removeEventListener('pwa-sw-ready', onSwReady);
       navigator.serviceWorker?.removeEventListener('controllerchange', checkSw);
       window.clearInterval(intervalId);
@@ -217,19 +239,52 @@ export function TelaDiagnostico() {
 
         <li class="diag-item">
           <div>
-            <span class="diag-label">e) Wake Lock API disponível</span>
+            <span class="diag-label">
+              e) Wake Lock ({STRINGS.telaSempreLigada})
+            </span>
             <span class="diag-detail">
-              {'wakeLock' in navigator
-                ? 'Suportado pelo navegador'
-                : 'Não suportado'}
+              {wakeLockState.status === 'ativo'
+                ? `${STRINGS.telaSempreLigada}: ${STRINGS.wakeAtiva}`
+                : wakeLockState.status === 'indisponivel'
+                ? `${STRINGS.telaSempreLigada}: ${STRINGS.wakeIndisponivel}`
+                : wakeLockState.status === 'negado'
+                ? `${STRINGS.telaSempreLigada}: ${STRINGS.wakeNegada}${
+                    wakeLockState.motivo ? ` (${wakeLockState.motivo})` : ''
+                  }`
+                : `API: ${
+                    wakeLockAvailable ? 'suportada (inativa)' : 'indisponível'
+                  }`}
             </span>
           </div>
           <span
             class={`diag-status ${
-              wakeLockAvailable ? 'status-ok' : 'status-fail'
+              wakeLockState.status === 'ativo' || wakeLockAvailable
+                ? 'status-ok'
+                : 'status-fail'
             }`}
           >
-            {wakeLockAvailable ? 'OK' : 'FALHA'}
+            {wakeLockState.status === 'ativo'
+              ? 'OK (ATIVA)'
+              : wakeLockAvailable
+              ? 'OK'
+              : 'FALHA'}
+          </span>
+        </li>
+
+        <li class="diag-item">
+          <div>
+            <span class="diag-label">g) Desempenho visual (VisualOrganico)</span>
+            <span class="diag-detail">
+              Modo escolhido: {diagVisual.modoEscolhido} (config:{' '}
+              {diagVisual.modoConfig} | FPS medido:{' '}
+              {diagVisual.fpsMedido !== null
+                ? `${diagVisual.fpsMedido} fps`
+                : 'medindo / n/d'}
+              )
+            </span>
+          </div>
+          <span class="diag-status status-ok">
+            {diagVisual.modoEscolhido.toUpperCase()}
           </span>
         </li>
 
