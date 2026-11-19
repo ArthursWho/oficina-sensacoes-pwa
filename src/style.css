@@ -638,5 +638,224 @@ body {
   min-height: 75vh;
 }
 
+/* VisualOrganico (CSS puro, leve para tablet; Etapa 9 refinará) */
+@keyframes respiracaoOrganica {
+  0%,
+  100% {
+    transform: scale(0.94);
+    border-radius: 46% 54% 52% 48% / 48% 45% 55% 52%;
+  }
+  50% {
+    transform: scale(1.07);
+    border-radius: 53% 47% 46% 54% / 54% 52% 48% 46%;
+  }
+}
+
+.ui-visual-organico {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--fade-duracao) ease, transform var(--fade-duracao) ease;
+  will-change: transform, opacity;
+}
+
+.ui-visual-organico--ativo {
+  opacity: 0.95;
+}
+
+.ui-visual-organico--calmo {
+  opacity: 0.38;
+  transform: scale(0.9);
+}
+
+.ui-visual-organico--apagado {
+  opacity: 0.05;
+  transform: scale(0.82);
+}
+
+.ui-visual-organico__camada {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
+
+.ui-visual-organico__camada--externa {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle,
+    rgba(139, 26, 43, 0.32) 0%,
+    rgba(90, 15, 30, 0.14) 58%,
+    rgba(13, 2, 4, 0) 78%
+  );
+  animation: respiracaoOrganica 1.6s ease-in-out infinite;
+}
+
+.ui-visual-organico__camada--media {
+  width: 68%;
+  height: 68%;
+  background: radial-gradient(
+    circle,
+    rgba(232, 168, 90, 0.25) 0%,
+    rgba(139, 26, 43, 0.24) 60%,
+    rgba(13, 2, 4, 0) 80%
+  );
+  animation: respiracaoOrganica 1.6s ease-in-out infinite -0.4s;
+}
+
+.ui-visual-organico__camada--nucleo {
+  width: 36%;
+  height: 36%;
+  background: radial-gradient(
+    circle,
+    rgba(242, 200, 143, 0.42) 0%,
+    rgba(232, 168, 90, 0.16) 72%,
+    rgba(13, 2, 4, 0) 100%
+  );
+  animation: respiracaoOrganica 1.6s ease-in-out infinite -0.8s;
+}
+
+.ui-visual-organico--calmo .ui-visual-organico__camada--externa,
+.ui-visual-organico--calmo .ui-visual-organico__camada--media,
+.ui-visual-organico--calmo .ui-visual-organico__camada--nucleo {
+  animation-duration: 4.5s;
+}
+
+.ui-visual-organico--apagado .ui-visual-organico__camada--externa,
+.ui-visual-organico--apagado .ui-visual-organico__camada--media,
+.ui-visual-organico--apagado .ui-visual-organico__camada--nucleo {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-visual-organico__camada {
+    animation: none !important;
+  }
+}
+
+/* Tela 3 — TelaCiclo */
+.tela-ciclo {
+  min-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.tela-ciclo__top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.tela-ciclo__progresso-touch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
+  padding: 0.25rem;
+  opacity: 0.72;
+  cursor: pointer;
+}
+
+.tela-ciclo__centro {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  text-align: center;
+}
+
+@keyframes musicaFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tela-ciclo__musica {
+  max-width: 720px;
+  padding: 0 var(--space-md);
+  animation: musicaFadeIn var(--fade-duracao) ease both;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.tela-ciclo__musica-titulo {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--amber-soft);
+  line-height: var(--line-height-heading);
+}
+
+.tela-ciclo__musica-artista {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.tela-ciclo__controles {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.tela-ciclo__bloco-pergunta {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  background-color: var(--surface);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg) var(--space-xl);
+  box-shadow: var(--shadow-wine);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  animation: telaFadeIn var(--transicao) both;
+}
+
+.tela-ciclo__pergunta-texto {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text);
+  line-height: var(--line-height-heading);
+  text-align: center;
+}
+
+.tela-ciclo__respostas {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.tela-ciclo__replay {
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--surface-alt);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+
 
 

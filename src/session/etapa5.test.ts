@@ -136,9 +136,11 @@ describe('Etapa 5 — Telas 1 e 2, Controlador de Efeitos e Preparo de Áudio', 
     await ctrl.aguardarFila();
     expect(passos).toEqual([`iniciarBatimentos:${FADE_IN_INICIAL_MS}`]);
 
-    // 2. INICIAR -> emite [fadeOutBatimentos, tocarFaixa]. fadeOut deve terminar ANTES do warn de tocarFaixa
-    warnSpy.mockImplementation((msg: unknown) => {
-      passos.push(`warn:${String(msg).split(' ')[0]}`);
+    // 2. INICIAR -> emite [fadeOutBatimentos, tocarFaixa]. fadeOut deve terminar ANTES do erro/aviso de tocarFaixa
+    errorSpy.mockImplementation((msg: unknown) => {
+      if (String(msg).includes('tocarFaixa indisponível')) {
+        passos.push('warn:efeito');
+      }
     });
     store.dispatch({ tipo: 'INICIAR' });
     await ctrl.aguardarFila();

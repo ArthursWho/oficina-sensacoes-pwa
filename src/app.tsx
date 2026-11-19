@@ -6,10 +6,8 @@ import { GaleriaComponentes } from './ui/GaleriaComponentes';
 import { SessaoLab } from './ui/SessaoLab';
 import { TelaDiagnostico } from './ui/TelaDiagnostico';
 import { TelaBoasVindas } from './ui/telas/TelaBoasVindas';
-import {
-  TelaCicloPlaceholder,
-  TelaEncerramentoPlaceholder,
-} from './ui/telas/TelaPlaceholders';
+import { TelaCiclo } from './ui/telas/TelaCiclo';
+import { TelaEncerramentoPlaceholder } from './ui/telas/TelaPlaceholders';
 import { TelaRecusa } from './ui/telas/TelaRecusa';
 import { TelaTcle } from './ui/telas/TelaTcle';
 
@@ -62,7 +60,7 @@ export function App() {
       case 'boas_vindas':
         return <TelaBoasVindas key="fase-boas-vindas" />;
       case 'ciclo':
-        return <TelaCicloPlaceholder key="fase-ciclo" estado={estado} />;
+        return <TelaCiclo key="fase-ciclo" estado={estado} />;
       case 'encerramento':
         return (
           <TelaEncerramentoPlaceholder
