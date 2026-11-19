@@ -1,0 +1,23 @@
+import { render } from 'preact';
+import { registerSW } from 'virtual:pwa-register';
+import { App } from './app';
+import './style.css';
+
+// Registra o Service Worker em modo prompt (sem recarregar automaticamente durante uma sessão)
+// TODO etapa 8: botão de atualização no menu do operador
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    // TODO etapa 8: botão de atualização no menu do operador
+  },
+  onOfflineReady() {
+    window.dispatchEvent(new CustomEvent('pwa-sw-ready'));
+  },
+  onRegisteredSW(_swUrl, registration) {
+    if (registration) {
+      window.dispatchEvent(new CustomEvent('pwa-sw-ready'));
+    }
+  },
+});
+
+render(<App />, document.getElementById('app')!);
