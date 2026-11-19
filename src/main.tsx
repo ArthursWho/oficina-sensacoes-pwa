@@ -4,10 +4,16 @@ import { App } from './app';
 import { audioEngine } from './audio/AudioEngine';
 import { criarControlador } from './session/controlador';
 import { sessionStore } from './session/store';
+import { pedirArmazenamentoPersistente } from './storage/persistente';
 import './style.css';
 
 // Instancia o controlador de efeitos uma única vez na inicialização do app
 criarControlador(audioEngine, sessionStore);
+
+// Solicita armazenamento persistente uma vez na inicialização do app
+void pedirArmazenamentoPersistente().then((res) => {
+  console.info('[Armazenamento Persistente]', res);
+});
 
 // Registra o Service Worker em modo prompt (sem recarregar automaticamente durante uma sessão)
 // TODO etapa 8: botão de atualização no menu do operador

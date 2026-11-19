@@ -4,11 +4,52 @@ import {
   faixaAtual,
   progresso,
   revelarMusica,
+  sessaoNaoSalva,
   textoPergunta2,
 } from './seletores';
 import { Estado } from './tipos';
 
 export type IntensidadeVisual = 'ativo' | 'calmo' | 'apagado';
+
+export interface VisaoEncerramento {
+  status: 'salvando' | 'salvo' | 'falha';
+  mostrarTentarNovamente: boolean;
+  podeReiniciarProvisorio: boolean;
+}
+
+/**
+ * Modelo de visão 100% puro para a Tela 4 (Encerramento).
+ * Retorna null se o estado atual não estiver na fase "encerramento".
+ */
+export function visaoEncerramento(estado: Estado): VisaoEncerramento | null {
+  if (estado.fase !== 'encerramento') {
+    return null;
+  }
+
+  const naoSalva = sessaoNaoSalva(estado);
+
+  if (estado.persistencia === 'pendente') {
+    return {
+      status: 'salvando',
+      mostrarTentarNovamente: false,
+      podeReiniciarProvisorio: !naoSalva,
+    };
+  }
+
+  if (estado.persistencia === 'ok') {
+    return {
+      status: 'salvo',
+      mostrarTentarNovamente: false,
+      podeReiniciarProvisorio: !naoSalva,
+    };
+  }
+
+  return {
+    status: 'falha',
+    mostrarTentarNovamente: true,
+    podeReiniciarProvisorio: !naoSalva,
+  };
+}
 
 export interface PerguntaVisao {
   texto: string;

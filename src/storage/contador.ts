@@ -1,21 +1,10 @@
-// Contador provisório de participantes em memória
-// TODO etapa 7: substituir por contador baseado nas sessões concluídas no IndexedDB
-
-let contadorProvisorio = 1;
+import { repositorio, RepositorioSessoes } from './repositorio';
 
 /**
- * Retorna o próximo número sequencial de participante (começa em 1).
- * TODO etapa 7: substituir por contador baseado nas sessões concluídas no IndexedDB.
+ * Retorna o próximo número sequencial de participante com base nas sessões concluídas no IndexedDB.
  */
-export async function proximoNumeroParticipante(): Promise<number> {
-  const atual = contadorProvisorio;
-  contadorProvisorio += 1;
-  return atual;
-}
-
-/**
- * Reinicia o contador provisório em memória (auxiliar para testes automatizados).
- */
-export function resetarContadorProvisorio(valorInicial = 1): void {
-  contadorProvisorio = valorInicial;
+export function proximoNumeroParticipante(
+  repo: RepositorioSessoes = repositorio
+): Promise<number> {
+  return repo.proximoNumeroParticipante();
 }

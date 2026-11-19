@@ -2,12 +2,13 @@ import { useEffect, useState } from 'preact/hooks';
 import { AudioLab } from './audio/AudioLab';
 import { sessionStore } from './session/store';
 import { Estado } from './session/tipos';
+import { ArmazenamentoLab } from './ui/ArmazenamentoLab';
 import { GaleriaComponentes } from './ui/GaleriaComponentes';
 import { SessaoLab } from './ui/SessaoLab';
 import { TelaDiagnostico } from './ui/TelaDiagnostico';
 import { TelaBoasVindas } from './ui/telas/TelaBoasVindas';
 import { TelaCiclo } from './ui/telas/TelaCiclo';
-import { TelaEncerramentoPlaceholder } from './ui/telas/TelaPlaceholders';
+import { TelaEncerramento } from './ui/telas/TelaEncerramento';
 import { TelaRecusa } from './ui/telas/TelaRecusa';
 import { TelaTcle } from './ui/telas/TelaTcle';
 
@@ -48,6 +49,9 @@ export function App() {
   if (hash === '#sessao-lab') {
     return <SessaoLab />;
   }
+  if (hash === '#armazenamento-lab') {
+    return <ArmazenamentoLab />;
+  }
 
   // Rota padrão (sem hash): fluxo principal renderizado a partir de estado.fase
   const renderizarFase = () => {
@@ -62,12 +66,7 @@ export function App() {
       case 'ciclo':
         return <TelaCiclo key="fase-ciclo" estado={estado} />;
       case 'encerramento':
-        return (
-          <TelaEncerramentoPlaceholder
-            key="fase-encerramento"
-            estado={estado}
-          />
-        );
+        return <TelaEncerramento key="fase-encerramento" estado={estado} />;
     }
   };
 

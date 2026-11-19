@@ -337,11 +337,16 @@ describe('Etapa 6 — Ciclo Experimental, Controlador Completo e Visão do Ciclo
     expect(store.getEstado().fase).toBe('cancelada');
   });
 
-  it('f) Sessão completa simulada (store + controlador + engine falso): ordem exata das chamadas em cada par, 6 pares, encerramento, validarSessao OK e 1 aviso de persistirSessao', async () => {
+  it('f) Sessão completa simulada (store + controlador + engine falso): ordem exata das chamadas em cada par, 6 pares, encerramento, validarSessao OK e 1 chamada a salvarSessao', async () => {
     const fake = criarEngineFalsoControlavel();
     const store = criarSessionStore();
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const ctrl = criarControlador(fake.engine, store);
+    const sessoesSalvas: string[] = [];
+    const repoFake = {
+      async salvarSessao(s: { id_participante: string }) {
+        sessoesSalvas.push(s.id_participante);
+      },
+    };
+    const ctrl = criarControlador(fake.engine, store, repoFake);
 
     const respostas: Array<{ p1: Resposta; p2: Resposta }> = [
       { p1: 'Sim', p2: 'Sim' },
@@ -399,8 +404,7 @@ describe('Etapa 6 — Ciclo Experimental, Controlador Completo e Visão do Ciclo
     if (stFinal.fase !== 'encerramento') return;
 
     expect(validarSessao(stFinal.concluida).ok).toBe(true);
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(String(warnSpy.mock.calls[0][0])).toContain('persistirSessao');
+    expect(sessoesSalvas).toEqual(['Participante_04']);
 
     // Verifica padrão exato de chamadas ao engine: 1 iniciarBatimentos + 6 pares de (fadeOut -> editado -> original -> fadeIn)
     const chamadasEsperadas: string[] = ['iniciarBatimentos:1000'];
@@ -414,8 +418,6 @@ describe('Etapa 6 — Ciclo Experimental, Controlador Completo e Visão do Ciclo
       );
     }
     expect(fake.chamadas).toEqual(chamadasEsperadas);
-
-    warnSpy.mockRestore();
   });
 
   it('g & h) Ouvir novamente (editada e original) e entrega tardia de "fim" de época anterior: não destrava o par e repetições batem', async () => {

@@ -5,8 +5,9 @@ import {
 } from '../audio/AudioEngine';
 import { FADE_IN_INICIAL_MS } from '../audio/config';
 import { TRACKS } from '../content/tracks';
+import { repositorio } from '../storage/repositorio';
 import { SessionStore } from './store';
-import { Efeito } from './tipos';
+import { Efeito, SessaoConcluida } from './tipos';
 
 // Interface mínima do AudioEngine consumida pelo controlador (facilita injeção em testes)
 export interface EngineControlador {
@@ -17,6 +18,11 @@ export interface EngineControlador {
   tocarFaixa?(src: string): Promise<ResultadoFaixa>;
   tentarRetomar?(): Promise<boolean>;
   aoMudarEstado?(cb: (evento: EventoEstadoAudio) => void): () => void;
+}
+
+// Interface mínima do repositório consumida pelo controlador
+export interface RepositorioControlador {
+  salvarSessao(s: SessaoConcluida): Promise<void>;
 }
 
 export interface ControladorSessao {
@@ -39,12 +45,13 @@ export function retomarAudioNoGesto(
 }
 
 /**
- * Conecta o store de sessão ao AudioEngine, executando os efeitos emitidos EM ORDEM,
- * com suporte a preempção imediata por "pararTudo", timers de transição e recuperação de batimentos.
+ * Conecta o store de sessão ao AudioEngine e ao Repositório IndexedDB,
+ * executando os efeitos emitidos EM ORDEM, com preempção por "pararTudo".
  */
 export function criarControlador(
   engine: EngineControlador,
-  store: SessionStore
+  store: SessionStore,
+  repo: RepositorioControlador = repositorio
 ): ControladorSessao {
   engineAtivoParaGesto = engine;
 
@@ -124,6 +131,18 @@ export function criarControlador(
     }
   };
 
+  const dispararPersistenciaSemBloquear = (sessao: SessaoConcluida): void => {
+    repo
+      .salvarSessao(sessao)
+      .then(() => {
+        store.dispatch({ tipo: 'PERSISTENCIA_OK' });
+      })
+      .catch((e) => {
+        console.error(e);
+        store.dispatch({ tipo: 'PERSISTENCIA_FALHA' });
+      });
+  };
+
   const executarUmEfeito = async (
     efeito: Efeito,
     lote: number
@@ -170,10 +189,8 @@ export function criarControlador(
           break;
 
         case 'persistirSessao':
-          // TODO etapa 7: implementar gravação da sessão concluída no IndexedDB
-          console.warn(
-            `// TODO etapa 7: persistirSessao (${efeito.sessao.id_participante})`
-          );
+          // Grava a sessão concluída no IndexedDB sem bloquear a fila de efeitos
+          dispararPersistenciaSemBloquear(efeito.sessao);
           break;
       }
     } catch (erro) {
@@ -197,7 +214,6 @@ export function criarControlador(
     }
 
     for (const efeito of efeitos) {
-      // Como pararTudo já foi executado sincronamente na preempção acima, evita chamá-lo duas vezes no mesmo lote
       if (efeito.tipo === 'pararTudo') {
         continue;
       }

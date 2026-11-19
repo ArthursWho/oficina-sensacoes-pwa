@@ -14,6 +14,12 @@ import { STRINGS } from '../../content/strings';
 import { sessionStore } from '../../session/store';
 import { Evento, ImagemAutorizacao } from '../../session/tipos';
 import { proximoNumeroParticipante } from '../../storage/contador';
+import {
+  assinarPreparoArmazenamento,
+  EstadoPreparoArmazenamento,
+  garantirSaudeArmazenamento,
+  obterEstadoPreparoArmazenamento,
+} from '../../storage/preparo';
 import { Button } from '../components/Button';
 import { Checkbox } from '../components/Checkbox';
 import { Modal } from '../components/Modal';
@@ -26,6 +32,11 @@ export interface ParametrosPodeAceitar {
   nome: string;
   nomeObrigatorio: boolean;
   processando: boolean;
+}
+
+export interface ParametrosPodeIniciarSessao {
+  audioOk: boolean;
+  armazenamentoOk: boolean;
 }
 
 /**
@@ -44,6 +55,16 @@ export function podeAceitar({
 }
 
 /**
+ * Função pura que verifica se ambos os pré-requisitos técnicos (áudio e armazenamento) estão prontos.
+ */
+export function podeIniciarSessao({
+  audioOk,
+  armazenamentoOk,
+}: ParametrosPodeIniciarSessao): boolean {
+  return Boolean(audioOk && armazenamentoOk);
+}
+
+/**
  * Constrói o evento ACEITAR para a máquina de estados.
  * Por privacidade, NUNCA recebe nem inclui o nome do participante.
  */
@@ -58,7 +79,7 @@ export function montarEventoAceitar(
   };
 }
 
-type TipoErroModal = 'audio' | 'preload' | null;
+type TipoErroModal = 'audio' | 'preload' | 'armazenamento' | null;
 
 // Tela 1 — Termo de Consentimento Livre e Esclarecido (TCLE)
 export function TelaTcle() {
@@ -75,20 +96,30 @@ export function TelaTcle() {
   const [estadoAudio, setEstadoAudio] = useState<EstadoPreparoAudio>(() =>
     obterEstadoPreparoAudio()
   );
+  const [estadoArmazenamento, setEstadoArmazenamento] =
+    useState<EstadoPreparoArmazenamento>(() =>
+      obterEstadoPreparoArmazenamento()
+    );
 
   useEffect(() => {
-    const desassinar = assinarPreparoAudio(setEstadoAudio);
-    // Inicia a pré-carga dos 13 áudios em segundo plano enquanto o participante lê o termo
+    const desassinarAudio = assinarPreparoAudio(setEstadoAudio);
+    const desassinarArmazenamento = assinarPreparoArmazenamento(
+      setEstadoArmazenamento
+    );
+
+    // Inicia a pré-carga dos 13 áudios e a verificação de saúde do IndexedDB em segundo plano
     void garantirPreload().catch(() => {});
+    void garantirSaudeArmazenamento().catch(() => {});
 
     return () => {
-      desassinar();
+      desassinarAudio();
+      desassinarArmazenamento();
       // Garante que o nome seja limpo ao desmontar a Tela 1
       setNome('');
     };
   }, []);
 
-  const mostrarErro = (tipo: 'audio' | 'preload') => {
+  const mostrarErro = (tipo: 'audio' | 'preload' | 'armazenamento') => {
     setErroModal(tipo);
   };
 
@@ -105,16 +136,30 @@ export function TelaTcle() {
       }
       try {
         const rel = await garantirPreload();
-        if (rel.falhas.length > 0) {
+        const audioOk = rel.falhas.length === 0;
+        if (!audioOk) {
           mostrarErro('preload');
           setProcessando(false);
           return;
         }
+
+        const saude = await garantirSaudeArmazenamento();
+        if (
+          !podeIniciarSessao({
+            audioOk,
+            armazenamentoOk: saude.saudavel,
+          })
+        ) {
+          mostrarErro('armazenamento');
+          setProcessando(false);
+          return;
+        }
+
         const n = await proximoNumeroParticipante();
         setNome('');
         sessionStore.dispatch(montarEventoAceitar(n, autorizaImagem));
       } catch {
-        mostrarErro('preload');
+        mostrarErro('armazenamento');
         setProcessando(false);
       }
     });
@@ -140,6 +185,20 @@ export function TelaTcle() {
       ? STRINGS.audioFalha
       : STRINGS.audioPreparando;
 
+  const textoIndicadorArmazenamento =
+    estadoArmazenamento === 'pronto'
+      ? STRINGS.armazenamentoPronto
+      : estadoArmazenamento === 'falha'
+      ? STRINGS.armazenamentoFalha
+      : STRINGS.armazenamentoPreparando;
+
+  const mensagemModalErro =
+    erroModal === 'audio'
+      ? STRINGS.erroAudio
+      : erroModal === 'preload'
+      ? STRINGS.erroPreload
+      : STRINGS.erroArmazenamento;
+
   return (
     <main class="tela-fluxo tela-tcle">
       <div class="tela-tcle__top-bar">
@@ -149,6 +208,18 @@ export function TelaTcle() {
             aria-hidden="true"
           />
           <span>{textoIndicadorAudio}</span>
+        </span>
+
+        <span class="tela-tcle__audio-badge" aria-live="polite">
+          <span
+            class={`tela-tcle__audio-dot tela-tcle__audio-dot--${
+              estadoArmazenamento === 'verificando'
+                ? 'carregando'
+                : estadoArmazenamento
+            }`}
+            aria-hidden="true"
+          />
+          <span>{textoIndicadorArmazenamento}</span>
         </span>
       </div>
 
@@ -219,12 +290,10 @@ export function TelaTcle() {
         </div>
       </footer>
 
-      {/* Modal para erros de desbloqueio de áudio ou falha de pré-carga */}
+      {/* Modal para erros de desbloqueio de áudio, pré-carga ou armazenamento */}
       <Modal
         aberto={erroModal !== null}
-        mensagem={
-          erroModal === 'audio' ? STRINGS.erroAudio : STRINGS.erroPreload
-        }
+        mensagem={mensagemModalErro}
         rotuloConfirmar={STRINGS.botaoTentarNovamente}
         rotuloCancelar={STRINGS.botaoOk}
         varianteConfirmar="primary"

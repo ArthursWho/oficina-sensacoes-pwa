@@ -27,11 +27,19 @@ export const STRINGS = {
   audioPreparando: 'Preparando áudio…',
   audioPronto: 'Áudio pronto',
   audioFalha: 'Áudio com falha',
+  armazenamentoPreparando: 'Preparando armazenamento…',
+  armazenamentoPronto: 'Armazenamento pronto',
+  armazenamentoFalha: 'Armazenamento com falha',
   voltarAoInicio: 'Voltar ao início',
   erroAudio:
     'Não foi possível ativar o som neste aparelho. Chame o condutor da atividade e tente novamente.',
   erroPreload:
     'Alguns áudios não foram carregados. Chame o condutor da atividade.',
+  erroArmazenamento:
+    'Não foi possível preparar o armazenamento deste aparelho. Chame o condutor da atividade.',
+  sessaoSalva: 'Sessão salva',
+  erroSalvar:
+    'Não foi possível salvar esta sessão. Chame o condutor da atividade.',
   botaoTentarNovamente: 'Tentar novamente',
   botaoOk: 'Ok',
 
