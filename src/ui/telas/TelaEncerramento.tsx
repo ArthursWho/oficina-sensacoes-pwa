@@ -39,7 +39,7 @@ export function TelaEncerramento({ estado }: { estado: Estado }) {
         </div>
       </section>
 
-      {/* Faixa inferior discreta em caso de falha na gravação + botão provisório do operador */}
+      {/* Faixa inferior discreta em caso de falha na gravação */}
       <footer class="tela-encerramento__footer">
         {visao.mostrarTentarNovamente && (
           <div class="tela-encerramento__error-bar" role="alert">
@@ -54,17 +54,6 @@ export function TelaEncerramento({ estado }: { estado: Estado }) {
             </Button>
           </div>
         )}
-
-        {/* TODO etapa 8: remover quando o menu do operador existir */}
-        <div class="tela-encerramento__operator-corner">
-          <Button
-            variant="ghost"
-            disabled={!visao.podeReiniciarProvisorio}
-            onClick={() => sessionStore.dispatch({ tipo: 'REINICIAR' })}
-          >
-            Reiniciar (provisório)
-          </Button>
-        </div>
       </footer>
     </main>
   );

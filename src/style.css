@@ -943,6 +943,108 @@ body {
   opacity: 0.65;
 }
 
+/* Menu do Operador e Botão Global de Engrenagem (Etapa 8) */
+.ui-operator-gear-btn {
+  position: fixed;
+  top: 0.65rem;
+  left: 0.65rem;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: pointer;
+  z-index: 1200;
+  transition: opacity var(--transicao), background-color var(--transicao),
+    border-color var(--transicao);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ui-operator-gear-btn:active,
+.ui-operator-gear-btn:focus-visible {
+  opacity: 0.95;
+  background-color: rgba(31, 7, 11, 0.72);
+  border-color: var(--wine);
+  outline: none;
+}
+
+.ui-operator-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(13, 2, 4, 0.94);
+  z-index: 1300;
+  overflow-y: auto;
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ui-operator-panel {
+  width: 100%;
+  max-width: 780px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-2xl);
+  text-align: left;
+}
+
+.ui-operator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background-color: var(--surface);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-wine);
+}
+
+.ui-operator-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  color: var(--amber-soft);
+}
+
+.ui-operator-section {
+  background-color: var(--surface);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-wine);
+}
+
+.ui-operator-counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+}
+
+.ui-operator-textarea {
+  width: 100%;
+  background-color: var(--bg);
+  color: var(--text);
+  border: 2px solid var(--wine);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  font-family: monospace;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+
 
 
 

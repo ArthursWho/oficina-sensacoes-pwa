@@ -70,4 +70,26 @@ export const STRINGS = {
     botaoInterromper: 'Interromper',
     botaoContinuar: 'Continuar',
   },
+
+  menuTitulo: 'Menu do operador',
+  menuFechar: 'Fechar',
+  contadorSessoes: 'Sessões concluídas',
+  naoExportadas: 'Ainda não exportadas',
+  exportarCsv: 'Exportar CSV',
+  exportarXlsx: 'Exportar XLSX',
+  compartilhar: 'Compartilhar arquivo',
+  copiarTexto: 'Copiar como texto',
+  semSessoes: 'Nenhuma sessão concluída para exportar.',
+  arquivoGerado:
+    'Arquivo gerado: {nome}. Confira a pasta Downloads do aparelho.',
+  avisoNaoSalva:
+    'Esta sessão ainda não foi salva. Se continuar, ela será perdida.',
+  descartarContinuar: 'Descartar e continuar',
+  voltar: 'Voltar',
+  versaoInstalada: 'Versão instalada',
+  atualizacaoDisponivel: 'Atualização disponível',
+  botaoAtualizar: 'Atualizar aplicativo',
+  confirmarAtualizar: 'Atualizar agora? O aplicativo será reiniciado.',
+  semAtualizacao: 'Aplicativo atualizado',
+  armazenamentoProtegido: 'Armazenamento protegido',
 } as const;

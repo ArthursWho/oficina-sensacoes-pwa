@@ -1,6 +1,10 @@
-import { repositorio, RepositorioSessoes } from './repositorio';
+import { repositorio } from './repositorio';
 
 export type EstadoPreparoArmazenamento = 'verificando' | 'pronto' | 'falha';
+
+export interface RepositorioSaudeMinimo {
+  verificarSaude(): Promise<{ saudavel: boolean; motivo?: string }>;
+}
 
 let promessaSaudeUnica: Promise<{ saudavel: boolean; motivo?: string }> | null =
   null;
@@ -38,7 +42,7 @@ export function assinarPreparoArmazenamento(
  * executa novamente `repo.verificarSaude()`.
  */
 export function garantirSaudeArmazenamento(
-  repo: RepositorioSessoes = repositorio
+  repo: RepositorioSaudeMinimo = repositorio
 ): Promise<{ saudavel: boolean; motivo?: string }> {
   if (!promessaSaudeUnica || estadoAtual === 'falha') {
     notificar('verificando');

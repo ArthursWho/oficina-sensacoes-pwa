@@ -583,7 +583,7 @@ describe('Etapa 7 — Persistência Local em IndexedDB e Tela 4 Real (Encerramen
     ).toEqual({
       status: 'salvando',
       mostrarTentarNovamente: false,
-      podeReiniciarProvisorio: false,
+      podeReiniciar: false,
     });
 
     expect(
@@ -596,7 +596,7 @@ describe('Etapa 7 — Persistência Local em IndexedDB e Tela 4 Real (Encerramen
     ).toEqual({
       status: 'salvo',
       mostrarTentarNovamente: false,
-      podeReiniciarProvisorio: true,
+      podeReiniciar: true,
     });
 
     expect(
@@ -609,7 +609,7 @@ describe('Etapa 7 — Persistência Local em IndexedDB e Tela 4 Real (Encerramen
     ).toEqual({
       status: 'falha',
       mostrarTentarNovamente: true,
-      podeReiniciarProvisorio: false,
+      podeReiniciar: false,
     });
   });
 });

@@ -14,7 +14,7 @@ export type IntensidadeVisual = 'ativo' | 'calmo' | 'apagado';
 export interface VisaoEncerramento {
   status: 'salvando' | 'salvo' | 'falha';
   mostrarTentarNovamente: boolean;
-  podeReiniciarProvisorio: boolean;
+  podeReiniciar: boolean;
 }
 
 /**
@@ -32,7 +32,7 @@ export function visaoEncerramento(estado: Estado): VisaoEncerramento | null {
     return {
       status: 'salvando',
       mostrarTentarNovamente: false,
-      podeReiniciarProvisorio: !naoSalva,
+      podeReiniciar: !naoSalva,
     };
   }
 
@@ -40,14 +40,14 @@ export function visaoEncerramento(estado: Estado): VisaoEncerramento | null {
     return {
       status: 'salvo',
       mostrarTentarNovamente: false,
-      podeReiniciarProvisorio: !naoSalva,
+      podeReiniciar: !naoSalva,
     };
   }
 
   return {
     status: 'falha',
     mostrarTentarNovamente: true,
-    podeReiniciarProvisorio: !naoSalva,
+    podeReiniciar: !naoSalva,
   };
 }
 

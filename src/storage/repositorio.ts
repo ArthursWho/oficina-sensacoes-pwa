@@ -6,6 +6,8 @@ import {
   NOME_DB_PADRAO,
   obterVersaoApp,
   RegistroSessaoDb,
+  RegistroUltimaExportacao,
+  STORE_META,
   STORE_SESSOES,
 } from './db';
 
@@ -15,6 +17,9 @@ export interface RepositorioSessoes {
   contarSessoes(): Promise<number>;
   proximoNumeroParticipante(): Promise<number>;
   verificarSaude(): Promise<{ saudavel: boolean; motivo?: string }>;
+  registrarExportacao(ids: string[], agora: Date): Promise<void>;
+  obterUltimaExportacao(): Promise<RegistroUltimaExportacao | null>;
+  contarNaoExportadas(): Promise<number>;
 }
 
 // Extrai o sufixo numérico de "Participante_NN" (ex.: "Participante_10" -> 10)
@@ -212,6 +217,61 @@ export function criarRepositorio(
           saudavel: false,
           motivo,
         };
+      }
+    },
+
+    async registrarExportacao(ids: string[], agora: Date): Promise<void> {
+      const db = await abrirBanco(nomeDb);
+      try {
+        const registro: RegistroUltimaExportacao = {
+          chave: 'ultimaExportacao',
+          em: agora.toISOString(),
+          ids: [...ids],
+        };
+        const tx = db.transaction(STORE_META, 'readwrite');
+        await Promise.all([tx.store.put(registro), tx.done]);
+      } finally {
+        db.close();
+      }
+    },
+
+    async obterUltimaExportacao(): Promise<RegistroUltimaExportacao | null> {
+      const db = await abrirBanco(nomeDb);
+      try {
+        const reg = await db.get(STORE_META, 'ultimaExportacao');
+        if (!reg) return null;
+        return {
+          chave: 'ultimaExportacao',
+          em: reg.em,
+          ids: [...reg.ids],
+        };
+      } finally {
+        db.close();
+      }
+    },
+
+    async contarNaoExportadas(): Promise<number> {
+      const db = await abrirBanco(nomeDb);
+      try {
+        const [chavesSessoes, ultima] = await Promise.all([
+          db.getAllKeys(STORE_SESSOES),
+          db.get(STORE_META, 'ultimaExportacao'),
+        ]);
+
+        if (!ultima || !Array.isArray(ultima.ids)) {
+          return chavesSessoes.length;
+        }
+
+        const exportadasSet = new Set(ultima.ids);
+        let naoExportadas = 0;
+        for (const chave of chavesSessoes) {
+          if (!exportadasSet.has(String(chave))) {
+            naoExportadas++;
+          }
+        }
+        return naoExportadas;
+      } finally {
+        db.close();
       }
     },
   };

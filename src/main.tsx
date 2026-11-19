@@ -5,6 +5,10 @@ import { audioEngine } from './audio/AudioEngine';
 import { criarControlador } from './session/controlador';
 import { sessionStore } from './session/store';
 import { pedirArmazenamentoPersistente } from './storage/persistente';
+import {
+  configurarAtualizadorPwa,
+  marcarAtualizacaoDisponivel,
+} from './ui/menu/pwaUpdate';
 import './style.css';
 
 // Instancia o controlador de efeitos uma única vez na inicialização do app
@@ -16,11 +20,10 @@ void pedirArmazenamentoPersistente().then((res) => {
 });
 
 // Registra o Service Worker em modo prompt (sem recarregar automaticamente durante uma sessão)
-// TODO etapa 8: botão de atualização no menu do operador
-registerSW({
+const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    // TODO etapa 8: botão de atualização no menu do operador
+    marcarAtualizacaoDisponivel();
   },
   onOfflineReady() {
     window.dispatchEvent(new CustomEvent('pwa-sw-ready'));
@@ -31,5 +34,7 @@ registerSW({
     }
   },
 });
+
+configurarAtualizadorPwa(updateSW, false);
 
 render(<App />, document.getElementById('app')!);

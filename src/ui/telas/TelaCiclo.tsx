@@ -6,28 +6,21 @@ import { Estado, Resposta } from '../../session/tipos';
 import { formatarDataHora } from '../../session/utilidades';
 import { visaoCiclo } from '../../session/visao';
 import { Button } from '../components/Button';
-import { Modal } from '../components/Modal';
 import { ProgressoPar } from '../components/ProgressoPar';
 import { VisualOrganico } from '../components/VisualOrganico';
 
 const TRAVA_CLIQUE_MS = 400;
-const SEGURAR_CANCELAR_MS = 2000;
 
 // Tela 3 — Ciclo Experimental (6 pares: editada -> P1 -> original -> P2)
 export function TelaCiclo({ estado }: { estado: Estado }) {
   const visao = visaoCiclo(estado);
   const [travaClique, setTravaClique] = useState<boolean>(false);
-  const [modalCancelarAberto, setModalCancelarAberto] =
-    useState<boolean>(false);
 
   const timerTravaRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const timerSegurarRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       if (timerTravaRef.current !== null) clearTimeout(timerTravaRef.current);
-      if (timerSegurarRef.current !== null)
-        clearTimeout(timerSegurarRef.current);
     };
   }, []);
 
@@ -71,38 +64,11 @@ export function TelaCiclo({ estado }: { estado: Estado }) {
     sessionStore.dispatch({ tipo: 'RETOMAR' });
   };
 
-  // TODO etapa 8: remover quando o menu do operador existir
-  const iniciarPressaoProgresso = () => {
-    if (timerSegurarRef.current !== null) {
-      clearTimeout(timerSegurarRef.current);
-    }
-    timerSegurarRef.current = setTimeout(() => {
-      timerSegurarRef.current = null;
-      setModalCancelarAberto(true);
-    }, SEGURAR_CANCELAR_MS);
-  };
-
-  // TODO etapa 8: remover quando o menu do operador existir
-  const cancelarPressaoProgresso = () => {
-    if (timerSegurarRef.current !== null) {
-      clearTimeout(timerSegurarRef.current);
-      timerSegurarRef.current = null;
-    }
-  };
-
   return (
     <main class="tela-fluxo tela-ciclo">
-      {/* Canto superior: ProgressoPar discreto (com gesto temporário de segurar por 2s para cancelar) */}
+      {/* Canto superior direito: ProgressoPar discreto */}
       <header class="tela-ciclo__top">
-        <div
-          class="tela-ciclo__progresso-touch"
-          onPointerDown={iniciarPressaoProgresso}
-          onPointerUp={cancelarPressaoProgresso}
-          onPointerLeave={cancelarPressaoProgresso}
-          onPointerCancel={cancelarPressaoProgresso}
-        >
-          <ProgressoPar atual={estado.par} total={6} />
-        </div>
+        <ProgressoPar atual={estado.par} total={6} />
       </header>
 
       {/* Centro: VisualOrganico sempre presente + revelação de título/artista quando liberado */}
@@ -180,20 +146,6 @@ export function TelaCiclo({ estado }: { estado: Estado }) {
           </div>
         </div>
       )}
-
-      {/* TODO etapa 8: remover quando o menu do operador existir */}
-      <Modal
-        aberto={modalCancelarAberto}
-        mensagem="Cancelar sessão? Nada será gravado."
-        rotuloConfirmar="Cancelar sessão"
-        rotuloCancelar="Continuar"
-        varianteConfirmar="danger"
-        onConfirmar={() => {
-          setModalCancelarAberto(false);
-          sessionStore.dispatch({ tipo: 'CANCELAR' });
-        }}
-        onCancelar={() => setModalCancelarAberto(false)}
-      />
     </main>
   );
 }

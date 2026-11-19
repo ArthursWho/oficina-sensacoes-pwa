@@ -2,8 +2,9 @@ import { DBSchema, IDBPDatabase, openDB } from 'idb';
 import { LinhaSessao } from '../session/tipos';
 
 export const NOME_DB_PADRAO = 'mundo-utero';
-export const VERSAO_DB = 1;
+export const VERSAO_DB = 2;
 export const STORE_SESSOES = 'sessoes';
+export const STORE_META = 'meta';
 
 export type CodigoErroArmazenamento =
   | 'indisponivel'
@@ -32,10 +33,23 @@ export interface RegistroSessaoDb {
   versao_app: string;
 }
 
+// Registro de metadados de exportação no object store "meta" (v2)
+export interface RegistroUltimaExportacao {
+  chave: 'ultimaExportacao';
+  em: string;
+  ids: string[];
+}
+
+export type RegistroMetaDb = RegistroUltimaExportacao;
+
 export interface EsquemaMundoUteroDb extends DBSchema {
   sessoes: {
     key: string;
     value: RegistroSessaoDb;
+  };
+  meta: {
+    key: string;
+    value: RegistroMetaDb;
   };
 }
 
@@ -49,7 +63,7 @@ export function obterVersaoApp(): string {
 }
 
 /**
- * Abre o banco IndexedDB (nome configurável, versão 1) com função upgrade preparada para futuras migrações.
+ * Abre o banco IndexedDB (nome configurável, versão 2) preservando "sessoes" e criando "meta".
  */
 export async function abrirBanco(
   nomeDb: string = NOME_DB_PADRAO
@@ -64,7 +78,7 @@ export async function abrirBanco(
   try {
     return await openDB<EsquemaMundoUteroDb>(nomeDb, VERSAO_DB, {
       upgrade(db, oldVersion) {
-        // Migração inicial (v0 -> v1): cria o object store "sessoes" com keyPath "id_participante"
+        // Migração v0 -> v1: cria o object store "sessoes" com keyPath "id_participante"
         if (oldVersion < 1) {
           if (!db.objectStoreNames.contains(STORE_SESSOES)) {
             db.createObjectStore(STORE_SESSOES, {
@@ -72,7 +86,14 @@ export async function abrirBanco(
             });
           }
         }
-        // Futuras migrações (oldVersion < 2, etc.) devem ser adicionadas abaixo
+        // Migração v1 -> v2: mantém "sessoes" intacto e cria o store "meta" com keyPath "chave"
+        if (oldVersion < 2) {
+          if (!db.objectStoreNames.contains(STORE_META)) {
+            db.createObjectStore(STORE_META, {
+              keyPath: 'chave',
+            });
+          }
+        }
       },
     });
   } catch (erro) {

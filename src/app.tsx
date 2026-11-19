@@ -4,6 +4,7 @@ import { sessionStore } from './session/store';
 import { Estado } from './session/tipos';
 import { ArmazenamentoLab } from './ui/ArmazenamentoLab';
 import { GaleriaComponentes } from './ui/GaleriaComponentes';
+import { MenuOperador } from './ui/menu/MenuOperador';
 import { SessaoLab } from './ui/SessaoLab';
 import { TelaDiagnostico } from './ui/TelaDiagnostico';
 import { TelaBoasVindas } from './ui/telas/TelaBoasVindas';
@@ -15,6 +16,7 @@ import { TelaTcle } from './ui/telas/TelaTcle';
 export function App() {
   const [hash, setHash] = useState<string>(() => window.location.hash);
   const [estado, setEstado] = useState<Estado>(() => sessionStore.getEstado());
+  const [chaveSessao, setChaveSessao] = useState<number>(1);
 
   useEffect(() => {
     const onHashChange = () => setHash(window.location.hash);
@@ -58,7 +60,7 @@ export function App() {
     switch (estado.fase) {
       case 'tcle':
       case 'cancelada':
-        return <TelaTcle key="fase-tcle" />;
+        return <TelaTcle key={`fase-tcle-${chaveSessao}`} />;
       case 'recusado':
         return <TelaRecusa key="fase-recusado" />;
       case 'boas_vindas':
@@ -71,8 +73,14 @@ export function App() {
   };
 
   return (
-    <div class="app-screen-transition" key={estado.fase}>
-      {renderizarFase()}
-    </div>
+    <>
+      <MenuOperador
+        estado={estado}
+        onRemontarTcle={() => setChaveSessao((c) => c + 1)}
+      />
+      <div class="app-screen-transition" key={`${estado.fase}-${chaveSessao}`}>
+        {renderizarFase()}
+      </div>
+    </>
   );
 }
