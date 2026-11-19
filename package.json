@@ -1,15 +1,19 @@
 {
   "name": "o-mundo-a-partir-do-utero",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "vite --mode desenvolvimento",
+    "build": "tsc --noEmit && vite build --mode producao",
+    "build:lab": "tsc --noEmit && vite build --mode desenvolvimento",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "check:release": "node --experimental-strip-types scripts/check-release.ts"
+    "test": "vitest run src",
+    "check:release": "node --experimental-strip-types scripts/check-release.ts",
+    "verificar:dist": "node scripts/verificar-dist.mjs",
+    "release:verificar": "npm run typecheck && npm run test && npm run build && npm run verificar:dist && npm run check:release",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "idb": "^8.0.2",

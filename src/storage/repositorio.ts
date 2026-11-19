@@ -11,6 +11,12 @@ import {
   STORE_META,
   STORE_SESSOES,
 } from './db';
+import { obterModoEnsaio } from './ensaio';
+import {
+  ModoBuild,
+  nomeBancoAtivo,
+  obterModoBuildAtual,
+} from './nomesBanco';
 
 export interface PreferenciasOperador {
   efeitosUi: boolean;
@@ -315,5 +321,71 @@ export function criarRepositorio(
   };
 }
 
-// Instância padrão do repositório apontando para o banco oficial "mundo-utero"
-export const repositorio: RepositorioSessoes = criarRepositorio(NOME_DB_PADRAO);
+// Cache de instâncias de repositório por nome de banco
+const cacheRepositorios = new Map<string, RepositorioSessoes>();
+
+function obterRepositorioPorNome(nomeDb: string): RepositorioSessoes {
+  let inst = cacheRepositorios.get(nomeDb);
+  if (!inst) {
+    inst = criarRepositorio(nomeDb);
+    cacheRepositorios.set(nomeDb, inst);
+  }
+  return inst;
+}
+
+/**
+ * Cria um proxy de repositório que delega todas as operações ao banco vigente
+ * (`nomeBancoAtivo(obterModoBuild(), obterModoEnsaio())`).
+ */
+export function criarProxyRepositorioAtivo(
+  obterModoBuild: () => ModoBuild = obterModoBuildAtual,
+  obterEnsaio: () => boolean = obterModoEnsaio
+): RepositorioSessoes & { nomeBancoVigente(): string } {
+  const resolverAtual = (): RepositorioSessoes => {
+    const nome = nomeBancoAtivo(obterModoBuild(), obterEnsaio());
+    return obterRepositorioPorNome(nome);
+  };
+
+  return {
+    nomeBancoVigente(): string {
+      return nomeBancoAtivo(obterModoBuild(), obterEnsaio());
+    },
+    salvarSessao(s) {
+      return resolverAtual().salvarSessao(s);
+    },
+    listarSessoes() {
+      return resolverAtual().listarSessoes();
+    },
+    contarSessoes() {
+      return resolverAtual().contarSessoes();
+    },
+    proximoNumeroParticipante() {
+      return resolverAtual().proximoNumeroParticipante();
+    },
+    verificarSaude() {
+      return resolverAtual().verificarSaude();
+    },
+    registrarExportacao(ids, agora) {
+      return resolverAtual().registrarExportacao(ids, agora);
+    },
+    obterUltimaExportacao() {
+      return resolverAtual().obterUltimaExportacao();
+    },
+    contarNaoExportadas() {
+      return resolverAtual().contarNaoExportadas();
+    },
+    obterPreferencias() {
+      return resolverAtual().obterPreferencias();
+    },
+    salvarPreferencias(p) {
+      return resolverAtual().salvarPreferencias(p);
+    },
+  };
+}
+
+// Proxy singleton do repositório ativo (alterna automaticamente entre produção/dev e ensaio)
+export const repositorioAtivo = criarProxyRepositorioAtivo();
+
+// Alias retrocompatível apontando para o proxy repositorioAtivo
+export const repositorio: RepositorioSessoes = repositorioAtivo;
+

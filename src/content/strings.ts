@@ -107,4 +107,11 @@ export const STRINGS = {
   ligado: 'Ligado',
   desligado: 'Desligado',
   sonsInterfaceAviso: 'Mantenha a mesma opção durante toda a coleta.',
+
+  modoEnsaioTitulo: 'Modo de ensaio',
+  modoEnsaioApoio:
+    'Ensaio: os dados vão para um banco separado e não entram na coleta.',
+  modoEnsaioBloqueado: 'Disponível apenas na tela inicial.',
+  modoEnsaioFaixa: 'MODO DE ENSAIO — os dados não entram na coleta',
+  diagnosticoMenuTitulo: 'Diagnóstico',
 } as const;

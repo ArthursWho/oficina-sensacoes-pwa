@@ -9,7 +9,21 @@ export interface EnginePreloadMinimo {
 
 let promessaPreloadUnica: Promise<RelatorioPreload> | null = null;
 let estadoAtual: EstadoPreparoAudio = 'carregando';
+let quantidadePrecarregada = 0;
 const assinantes = new Set<(estado: EstadoPreparoAudio) => void>();
+
+/**
+ * Retorna a quantidade de áudios decodificados com sucesso até o momento (0..13).
+ */
+export function obterContagemPreloadAudio(): {
+  carregados: number;
+  total: number;
+} {
+  return {
+    carregados: quantidadePrecarregada,
+    total: ALL_AUDIO_SRCS.length,
+  };
+}
 
 function notificar(novoEstado: EstadoPreparoAudio): void {
   estadoAtual = novoEstado;
@@ -49,6 +63,7 @@ export function garantirPreload(
     promessaPreloadUnica = engine
       .preload(ALL_AUDIO_SRCS)
       .then((rel) => {
+        quantidadePrecarregada = rel.ok.length;
         if (rel.falhas.length === 0 && rel.ok.length === ALL_AUDIO_SRCS.length) {
           notificar('pronto');
         } else {
@@ -73,5 +88,6 @@ export function garantirPreload(
 export function resetarPreparoAudioParaTestes(): void {
   promessaPreloadUnica = null;
   estadoAtual = 'carregando';
+  quantidadePrecarregada = 0;
   assinantes.clear();
 }

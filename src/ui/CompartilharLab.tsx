@@ -337,7 +337,7 @@ export function CompartilharLab() {
         </div>
       </header>
 
-      <div class="sessao-lab-banner" role="note">
+      <div class="aviso-destaque-box" role="note">
         <strong>AVISO FIXO:</strong> Laboratório de testes. Não usa os dados
         reais.
       </div>

@@ -308,7 +308,7 @@ export function ArmazenamentoLab() {
         <h2 class="demo-section__title">
           3. Banco de TESTE ("{NOME_DB_TESTE}")
         </h2>
-        <div class="sessao-lab-banner" role="note">
+        <div class="aviso-destaque-box" role="note">
           <strong>AVISO FIXO:</strong> O banco de teste (
           <code>{NOME_DB_TESTE}</code>) é totalmente separado e{' '}
           <strong>não afeta os dados reais</strong> da oficina.

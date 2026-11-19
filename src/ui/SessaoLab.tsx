@@ -182,7 +182,7 @@ export function SessaoLab() {
       </header>
 
       {/* Aviso fixo de que este laboratório não toca áudio */}
-      <div class="sessao-lab-banner" role="note">
+      <div class="aviso-destaque-box" role="note">
         <strong>AVISO FIXO:</strong> Este laboratório testa exclusivamente a
         função redutora pura (<code>src/session/</code>) e <strong>não toca áudio</strong>.
         Os efeitos emitidos são apenas exibidos no log abaixo.

@@ -5,7 +5,7 @@ import {
 } from '../audio/AudioEngine';
 import { FADE_IN_INICIAL_MS } from '../audio/config';
 import { TRACKS } from '../content/tracks';
-import { repositorio } from '../storage/repositorio';
+import { repositorioAtivo } from '../storage/repositorio';
 import { SessionStore } from './store';
 import { Efeito, SessaoConcluida } from './tipos';
 
@@ -51,7 +51,7 @@ export function retomarAudioNoGesto(
 export function criarControlador(
   engine: EngineControlador,
   store: SessionStore,
-  repo: RepositorioControlador = repositorio
+  repo: RepositorioControlador = repositorioAtivo
 ): ControladorSessao {
   engineAtivoParaGesto = engine;
 

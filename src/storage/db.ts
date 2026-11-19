@@ -1,7 +1,9 @@
 import { DBSchema, IDBPDatabase, openDB } from 'idb';
 import { LinhaSessao } from '../session/tipos';
+import { NOME_BANCO_PRODUCAO } from './nomesBanco';
 
-export const NOME_DB_PADRAO = 'mundo-utero';
+// NÃO ALTERE o nome de produção depois do início da coleta: mudar o nome esconde as sessões já gravadas
+export const NOME_DB_PADRAO = NOME_BANCO_PRODUCAO;
 export const VERSAO_DB = 2;
 export const STORE_SESSOES = 'sessoes';
 export const STORE_META = 'meta';
@@ -60,12 +62,21 @@ export interface EsquemaMundoUteroDb extends DBSchema {
 }
 
 /**
- * Obtém a versão do build do aplicativo injetada pelo Vite (com fallback seguro para ambiente de testes).
+ * Obtém a versão do build do aplicativo injetada pelo Vite (formato "1.0.0+<sha>" ou "1.0.0+sem-git").
  */
 export function obterVersaoApp(): string {
   return typeof __BUILD_VERSION__ !== 'undefined'
     ? __BUILD_VERSION__
-    : 'dev-test';
+    : '1.0.0+sem-git';
+}
+
+/**
+ * Obtém a data/hora ISO do build injetada pelo Vite.
+ */
+export function obterDataBuildApp(): string {
+  return typeof __BUILD_TIMESTAMP__ !== 'undefined'
+    ? __BUILD_TIMESTAMP__
+    : 'dev-local';
 }
 
 /**

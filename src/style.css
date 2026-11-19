@@ -407,8 +407,8 @@ body {
   -webkit-user-select: text;
 }
 
-/* Estilos do Laboratório da Sessão (#sessao-lab) */
-.sessao-lab-banner {
+/* Estilos de aviso e tabela de sessão */
+.aviso-destaque-box {
   background-color: rgba(232, 168, 90, 0.14);
   border: 2px solid var(--amber);
   border-radius: var(--radius-md);
@@ -1072,7 +1072,23 @@ body {
   opacity: 0.65;
 }
 
-/* Menu do Operador e Botão Global de Engrenagem (Etapa 8/9) */
+/* Menu do Operador, Faixa de Modo de Ensaio e Botão Global de Engrenagem (Etapa 8/9/10) */
+.ui-ensaio-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--danger);
+  color: var(--bg);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: calc(0.4rem + var(--safe-top)) 1rem 0.4rem;
+  z-index: 1400;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
 .ui-operator-gear-btn {
   position: fixed;
   top: calc(0.5rem + var(--safe-top));
@@ -1090,8 +1106,16 @@ body {
   cursor: pointer;
   z-index: 1200;
   transition: opacity var(--transicao), background-color var(--transicao),
-    border-color var(--transicao);
+    border-color var(--transicao), top var(--transicao);
   -webkit-tap-highlight-color: transparent;
+}
+
+.ui-operator-gear-btn--with-banner {
+  top: calc(2.4rem + var(--safe-top));
+}
+
+.ui-operator-overlay--with-banner {
+  padding-top: calc(var(--space-lg) + 2.4rem);
 }
 
 .ui-operator-gear-btn:active,

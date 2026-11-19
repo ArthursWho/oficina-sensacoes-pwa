@@ -4,6 +4,7 @@ import {
   definirPreferenciaEfeitosUi,
   obterPreferenciaEfeitosUi,
 } from '../../audio/efeitosUi';
+import { obterContagemPreloadAudio } from '../../audio/preparo';
 import { STRINGS } from '../../content/strings';
 import {
   baixarArquivo,
@@ -18,22 +19,35 @@ import { gerarCsv, gerarCsvBlob } from '../../export/csv';
 import { achatarSessoes } from '../../export/linhas';
 import { nomeArquivoExportacao } from '../../export/nomeArquivo';
 import { gerarXlsx } from '../../export/xlsx';
-import { sessionStore } from '../../session/store';
-import { Estado } from '../../session/tipos';
-import { obterVersaoApp } from '../../storage/db';
 import {
   assinarWakeLockGlobal,
   EstadoWakeLock,
   obterEstadoWakeLockGlobal,
 } from '../../plataforma/wakeLock';
+import { sessionStore } from '../../session/store';
+import { Estado } from '../../session/tipos';
+import { obterDataBuildApp, obterVersaoApp } from '../../storage/db';
+import {
+  assinarModoEnsaio,
+  bannerModoEnsaio,
+  definirModoEnsaio,
+  obterModoEnsaio,
+  podeAlternarEnsaio,
+} from '../../storage/ensaio';
+import { obterModoBuildAtual } from '../../storage/nomesBanco';
 import {
   estadoArmazenamento,
   EstadoArmazenamentoDispositivo,
 } from '../../storage/persistente';
-import { repositorio } from '../../storage/repositorio';
+import { repositorioAtivo } from '../../storage/repositorio';
 import { Button } from '../components/Button';
 import { IconeEngrenagem } from '../components/IconeEngrenagem';
 import { Modal } from '../components/Modal';
+import {
+  assinarDiagnosticoVisual,
+  DiagnosticoVisual,
+  obterDiagnosticoVisual,
+} from '../components/VisualOrganico';
 import { acoesMenu, aoTocarEngrenagem } from './logicaMenu';
 import {
   aplicarAtualizacaoPwa,
@@ -58,6 +72,19 @@ interface ErroShareUi {
   detalheTecnico: string;
 }
 
+function obterDisplayModeAtual(): string {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return 'browser';
+  }
+  if (window.matchMedia('(display-mode: fullscreen)').matches) {
+    return 'fullscreen';
+  }
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    return 'standalone';
+  }
+  return 'browser';
+}
+
 // Botão global de engrenagem + Painel sobreposto do Menu do Operador
 export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
   const [menuAberto, setMenuAberto] = useState<boolean>(false);
@@ -68,7 +95,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
   const [modalAtualizarAberto, setModalAtualizarAberto] =
     useState<boolean>(false);
 
-  // Contadores lidos do repositório ao abrir o menu
+  // Contadores lidos do repositório ativo ao abrir o menu
   const [totalSessoes, setTotalSessoes] = useState<number>(0);
   const [naoExportadas, setNaoExportadas] = useState<number>(0);
   const [infoStorage, setInfoStorage] =
@@ -85,7 +112,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     useState<boolean>(false);
   const [msgCopia, setMsgCopia] = useState<string>('');
 
-  // Estado de atualização do PWA, Wake Lock e Sons da interface
+  // Estado de atualização do PWA, Wake Lock, Sons da interface e Modo de Ensaio
   const [atualizacaoPendente, setAtualizacaoPendente] = useState<boolean>(() =>
     temAtualizacaoDisponivel()
   );
@@ -95,26 +122,65 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
   const [sonsUiAtivos, setSonsUiAtivos] = useState<boolean>(() =>
     obterPreferenciaEfeitosUi()
   );
+  const [modoEnsaio, setModoEnsaio] = useState<boolean>(() =>
+    obterModoEnsaio()
+  );
+
+  // Seção recolhível de Diagnóstico
+  const [diagAberto, setDiagAberto] = useState<boolean>(false);
+  const [swAtivo, setSwAtivo] = useState<boolean>(false);
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [diagVisual, setDiagVisual] = useState<DiagnosticoVisual>(() =>
+    obterDiagnosticoVisual()
+  );
 
   useEffect(() => {
     const u1 = assinarAtualizacaoPwa(setAtualizacaoPendente);
     const u2 = assinarWakeLockGlobal(setWakeLockState);
     const u3 = assinarPreferenciaEfeitosUi(setSonsUiAtivos);
+    const u4 = assinarModoEnsaio(setModoEnsaio);
+    const u5 = assinarDiagnosticoVisual(setDiagVisual);
+
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+
     return () => {
       u1();
       u2();
       u3();
+      u4();
+      u5();
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
     };
   }, []);
 
+  const verificarSwAtivo = async () => {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+      setSwAtivo(false);
+      return;
+    }
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      setSwAtivo(Boolean(navigator.serviceWorker.controller || reg?.active));
+    } catch {
+      setSwAtivo(false);
+    }
+  };
+
   const carregarDadosMenu = async () => {
     setWakeLockState(obterEstadoWakeLockGlobal());
+    void verificarSwAtivo();
     try {
       const [total, pendentes, st, prefs] = await Promise.all([
-        repositorio.contarSessoes(),
-        repositorio.contarNaoExportadas(),
+        repositorioAtivo.contarSessoes(),
+        repositorioAtivo.contarNaoExportadas(),
         estadoArmazenamento(),
-        repositorio.obterPreferencias(),
+        repositorioAtivo.obterPreferencias(),
       ]);
       setTotalSessoes(total);
       setNaoExportadas(pendentes);
@@ -129,10 +195,21 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     const novoValor = !sonsUiAtivos;
     definirPreferenciaEfeitosUi(novoValor);
     try {
-      await repositorio.salvarPreferencias({ efeitosUi: novoValor });
+      await repositorioAtivo.salvarPreferencias({ efeitosUi: novoValor });
     } catch {
       // Mantém preferência em memória mesmo se falhar gravação
     }
+  };
+
+  const handleAlternarModoEnsaio = async () => {
+    if (!podeAlternarEnsaio(estado)) return;
+    const novoValor = !modoEnsaio;
+    definirModoEnsaio(novoValor, estado);
+    setUltimoGerado(null);
+    setStatusExportacao('');
+    setErroExportacao('');
+    onRemontarTcle();
+    await carregarDadosMenu();
   };
 
   const abrirPainelMenu = () => {
@@ -194,7 +271,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     sessionStore.dispatch({ tipo: 'CANCELAR' });
   };
 
-  // Ação: Exportar CSV ou XLSX
+  // Ação: Exportar CSV ou XLSX (usa repositorioAtivo e prefixo ENSAIO_ quando em modo de ensaio)
   const handleExportar = async (formato: 'csv' | 'xlsx') => {
     if (gerandoExportacao) return;
     setGerandoExportacao(true);
@@ -205,7 +282,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     setMostrarTextareaFallback(false);
 
     try {
-      const sessoes = await repositorio.listarSessoes();
+      const sessoes = await repositorioAtivo.listarSessoes();
       if (sessoes.length === 0) {
         setStatusExportacao('');
         setErroExportacao(STRINGS.semSessoes);
@@ -215,13 +292,14 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
 
       const linhas = achatarSessoes(sessoes);
       const agora = new Date();
-      const nome = nomeArquivoExportacao(formato, agora, sessoes.length);
+      const nome = nomeArquivoExportacao(formato, agora, sessoes.length, {
+        ensaio: obterModoEnsaio(),
+      });
       const textoCsv = gerarCsv(linhas);
 
       const blob =
         formato === 'csv' ? gerarCsvBlob(linhas) : await gerarXlsx(linhas);
 
-      // Cria o File e escolhe a variante via canShare UMA VEZ no momento da geração
       const preparoShare = prepararCompartilhamento({
         formato,
         blobDownload: blob,
@@ -240,7 +318,7 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
       }
 
       const ids = sessoes.map((s) => s.id_participante);
-      await repositorio.registrarExportacao(ids, agora);
+      await repositorioAtivo.registrarExportacao(ids, agora);
 
       setUltimoGerado({
         nome,
@@ -265,7 +343,6 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     variante: number | null
   ) => {
     if (res.ok || res.cancelado) {
-      // AbortError (cancelado pelo usuário) não é erro e não exibe mensagem
       setErroShare(null);
       return;
     }
@@ -286,7 +363,6 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     const prep = ultimoGerado?.preparoShare;
     if (!prep || !prep.arquivo) return;
     setErroShare(null);
-    // Chamada síncrona direta a compartilharArquivo (que chama navigator.share no mesmo tick)
     compartilharArquivo(prep.arquivo).then((res) =>
       tratarResultadoShare(res, prep.variante)
     );
@@ -324,6 +400,11 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
     ? 'sim'
     : 'não';
 
+  const textoQuotaStorage =
+    infoStorage?.usoMB !== undefined && infoStorage?.quotaMB !== undefined
+      ? ` (${infoStorage.usoMB} MB / ${infoStorage.quotaMB} MB)`
+      : '';
+
   const textoWakeLock =
     wakeLockState.status === 'ativo'
       ? STRINGS.wakeAtiva
@@ -336,13 +417,27 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
       : 'inativa';
 
   const modoShare = ultimoGerado?.preparoShare.modo ?? 'indisponivel';
+  const podeMudarEnsaio = podeAlternarEnsaio(estado);
+  const textoBannerEnsaio = bannerModoEnsaio(estado, modoEnsaio);
+  const contagemAudio = obterContagemPreloadAudio();
+  const modoBuildStr =
+    obterModoBuildAtual() === 'producao' ? 'PRODUÇÃO' : 'DESENVOLVIMENTO';
 
   return (
     <>
+      {/* Faixa fixa global no topo de todas as telas e do menu quando o Modo de Ensaio está ativo */}
+      {textoBannerEnsaio && (
+        <div class="ui-ensaio-banner" role="status" aria-live="polite">
+          {textoBannerEnsaio}
+        </div>
+      )}
+
       {/* Botão discreto de engrenagem no canto superior esquerdo (oposto ao indicador "n / 6") */}
       <button
         type="button"
-        class="ui-operator-gear-btn"
+        class={`ui-operator-gear-btn ${
+          textoBannerEnsaio ? 'ui-operator-gear-btn--with-banner' : ''
+        }`}
         aria-label={STRINGS.menuTitulo}
         onClick={handleTocarEngrenagem}
       >
@@ -388,7 +483,9 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
       {/* Painel sobreposto em tela cheia do Menu do Operador */}
       {menuAberto && (
         <div
-          class="ui-operator-overlay"
+          class={`ui-operator-overlay ${
+            textoBannerEnsaio ? 'ui-operator-overlay--with-banner' : ''
+          }`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="operator-menu-title"
@@ -557,7 +654,10 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
                 </div>
                 <div class="diag-item">
                   <span class="diag-label">{STRINGS.armazenamentoProtegido}</span>
-                  <strong>{textoArmazenamentoProtegido}</strong>
+                  <strong>
+                    {textoArmazenamentoProtegido}
+                    {textoQuotaStorage}
+                  </strong>
                 </div>
                 <div class="diag-item">
                   <span class="diag-label">{STRINGS.telaSempreLigada}</span>
@@ -580,6 +680,24 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
                   </Button>
                 </div>
                 <div class="diag-item">
+                  <div>
+                    <span class="diag-label">{STRINGS.modoEnsaioTitulo}</span>
+                    <span class="diag-detail">
+                      {STRINGS.modoEnsaioApoio}
+                      {!podeMudarEnsaio
+                        ? ` (${STRINGS.modoEnsaioBloqueado})`
+                        : ''}
+                    </span>
+                  </div>
+                  <Button
+                    variant={modoEnsaio ? 'danger' : 'secondary'}
+                    disabled={!podeMudarEnsaio}
+                    onClick={handleAlternarModoEnsaio}
+                  >
+                    {modoEnsaio ? STRINGS.ligado : STRINGS.desligado}
+                  </Button>
+                </div>
+                <div class="diag-item">
                   <span class="diag-label">
                     {atualizacaoPendente
                       ? STRINGS.atualizacaoDisponivel
@@ -597,6 +715,86 @@ export function MenuOperador({ estado, onRemontarTcle }: MenuOperadorProps) {
                   )}
                 </div>
               </div>
+            </section>
+
+            {/* 6. Seção Diagnóstico (recolhível) */}
+            <section class="ui-operator-section">
+              <div
+                class="demo-row"
+                style={{ justifyContent: 'space-between' }}
+              >
+                <h3 class="demo-section__title">
+                  {STRINGS.diagnosticoMenuTitulo}
+                </h3>
+                <Button
+                  variant="ghost"
+                  onClick={() => setDiagAberto((v) => !v)}
+                >
+                  {diagAberto ? 'Ocultar diagnóstico' : 'Exibir diagnóstico'}
+                </Button>
+              </div>
+
+              {diagAberto && (
+                <div class="demo-stack">
+                  <div class="diag-item">
+                    <span class="diag-label">Versão / Commit do build</span>
+                    <strong>{obterVersaoApp()}</strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">Data do build</span>
+                    <strong>{obterDataBuildApp()}</strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">Modo de build</span>
+                    <strong>{modoBuildStr}</strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">Banco ativo</span>
+                    <strong>{repositorioAtivo.nomeBancoVigente()}</strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">Service Worker ativo</span>
+                    <strong>{swAtivo ? 'sim' : 'não'}</strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">Modo de exibição</span>
+                    <strong>{obterDisplayModeAtual()}</strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">Conexão</span>
+                    <strong>{isOnline ? 'online' : 'offline'}</strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">{STRINGS.telaSempreLigada}</span>
+                    <strong>{textoWakeLock}</strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">
+                      {STRINGS.armazenamentoProtegido} (uso / quota)
+                    </span>
+                    <strong>
+                      {textoArmazenamentoProtegido}
+                      {textoQuotaStorage}
+                    </strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">Áudios pré-carregados</span>
+                    <strong>
+                      {contagemAudio.carregados}/{contagemAudio.total}
+                    </strong>
+                  </div>
+                  <div class="diag-item">
+                    <span class="diag-label">Modo visual / FPS medido</span>
+                    <strong>
+                      {diagVisual.modoEscolhido} (
+                      {diagVisual.fpsMedido !== null
+                        ? `${diagVisual.fpsMedido} fps`
+                        : 'n/d'}
+                      )
+                    </strong>
+                  </div>
+                </div>
+              )}
             </section>
           </div>
         </div>
